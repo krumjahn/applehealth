@@ -30,14 +30,6 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - matplotlib
 - xml.etree.ElementTree (included in Python standard library)
 
-## How to export your Apple health data
-
-1. Open the Health app
-2. Tap your profile picture/icon in the top right
-3. Scroll down and tap "Export All Health Data"
-4. This creates a ZIP file with your data
-5. Add the export.xml file into the same folder as this code
-
 ## 🛠️ Installation
 
 1. Clone this repository:
