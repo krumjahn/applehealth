@@ -36,7 +36,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 2. Tap your profile picture/icon in the top right
 3. Scroll down and tap "Export All Health Data"
 4. This creates a ZIP file with your data
-5. You can share this file via email, AirDrop, etc.
+5. Add the export.xml file into the same folder as this code
 
 ## 🛠️ Installation
 
