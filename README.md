@@ -42,7 +42,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/apple-health-analyzer.git
+git clone https://github.com/krumjahn/applehealth.git
 cd apple-health-analyzer
 ```
 
