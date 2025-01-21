@@ -2,8 +2,16 @@
 
 A Python tool that transforms Apple Health export data into insightful visualizations and analytics. Easily track your fitness journey with detailed analysis of steps, workouts, heart rate, sleep, and more. Features specialized support for WHOOP workout data.
 
+# Examples of charts you can generate
+
 ![Python Version](https://img.shields.io/badge/python-3.6+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+![workouts](https://github.com/user-attachments/assets/358638fe-776b-407d-922e-7538058e89d8)
+![heartrate](https://github.com/user-attachments/assets/f3bf7837-d657-4ef3-844b-18b434353947)
+![Figure_1](https://github.com/user-attachments/assets/64364c2d-081f-42d2-8209-48cab57db659)
+![distance](https://github.com/user-attachments/assets/b21d08d0-e518-4343-9a4f-030c96624b62)
+
 
 ## 🚀 Features
 
