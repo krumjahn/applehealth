@@ -1,4 +1,4 @@
-# Apple Health Data Analyzer
+# Apple Health A.I. Data Analyzer
 
 A Python tool that transforms Apple Health export data into insightful visualizations and analytics, with AI-powered analysis. Easily track your fitness journey with detailed analysis of steps, workouts, heart rate, sleep, and more. Features specialized support for WHOOP workout data and ChatGPT integration for personalized insights.
 
@@ -15,6 +15,31 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - ⚖️ Weight tracking over time
 - 😴 Sleep pattern analysis
 - 🔄 WHOOP workout integration
+
+## Example A.I. analysis
+Here are the most surprising insights from your health data:
+
+```
+Marathon-Level Days: You've had several "super active" days exceeding 40,000 steps, with your record being 46,996 steps on March 24, 2018 - equivalent to walking about 23 miles! Interestingly, these extremely active days often don't coincide with recorded workouts.
+
+Reversed Weekend Pattern: Unlike most people who are more active on weekends, your data shows consistently lower step counts on weekends, suggesting your physical activity is more tied to workdays than leisure time.
+
+Workout Evolution: Your exercise patterns have notably changed over the years - you've shifted from frequent, shorter workouts to less frequent but more intense sessions. Recent workouts show higher average heart rates despite being less frequent.
+
+Seasonal Anomalies: While there's a general trend of higher activity in spring/summer, some of your most active periods occurred during winter months, particularly in December and January of recent years.
+
+Heart Rate Cycles: Your data shows interesting 3-4 week cycles where resting heart rate gradually increases then drops, possibly indicating training load and recovery patterns.
+COVID Impact: There's a clear signature of the pandemic in your data, with more erratic step patterns and changed workout routines during 2020-2021, followed by a distinct recovery pattern in late 2021.
+
+Morning Consistency: Your most successful workout periods consistently occur in morning hours, with these sessions showing better heart rate performance compared to other times.
+```
+
+## Examples of charts
+![workouts](https://github.com/user-attachments/assets/6c373d3e-e038-4428-a8be-7c86c973a662)
+![Figure_1](https://github.com/user-attachments/assets/fd25d50b-d303-46fe-aac3-0bba9c3295b7)
+![distance](https://github.com/user-attachments/assets/72009a90-3687-4008-a208-a0f1702d3843)
+![heartrate](https://github.com/user-attachments/assets/7f739661-f822-49e7-b79c-209c5164ecdc)
+
 
 ## 📋 Requirements
 
