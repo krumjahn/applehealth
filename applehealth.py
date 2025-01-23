@@ -276,6 +276,7 @@ def analyze_workouts():
 def analyze_with_chatgpt(csv_files):
     """
     Analyze health data using ChatGPT API.
+    Uses GPT-4 Turbo for enhanced analysis capabilities.
     """
     try:
         # Load API key from .env file
@@ -308,7 +309,7 @@ def analyze_with_chatgpt(csv_files):
             print("\nNo data files found! Please run some analyses first to generate CSV files.")
             return
         
-        print("\nSending data to ChatGPT for analysis...")
+        print("\nSending data to GPT-4 Turbo for analysis...")
         
         # Prepare the prompt
         prompt = f"""Analyze this Apple Health data and provide surprising insights:
@@ -324,7 +325,7 @@ def analyze_with_chatgpt(csv_files):
         
         # Make API call with new format
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-1106-preview",
             messages=[
                 {"role": "system", "content": "You are a health data analyst specializing in Apple Health data analysis."},
                 {"role": "user", "content": prompt}
@@ -334,8 +335,8 @@ def analyze_with_chatgpt(csv_files):
         )
         
         # Print analysis
-        print("\nChatGPT Analysis:")
-        print("================")
+        print("\nGPT-4 Turbo Analysis:")
+        print("====================")
         print(response.choices[0].message.content)
         
     except Exception as e:
