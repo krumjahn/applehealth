@@ -1,9 +1,52 @@
+"""
+Apple Health Data Analyzer
+-------------------------
+
+This script analyzes exported Apple Health data (export.xml) with a focus on:
+- Steps
+- Walking/Running Distance
+- Heart Rate
+- Weight
+- Sleep
+- Workouts (specifically WHOOP workout data)
+
+Requirements:
+- Python 3.6+
+- pandas
+- matplotlib7
+- xml.etree.ElementTree
+- openai
+- dotenv
+
+Usage:
+1. Export your Apple Health data from the Health app on your iPhone
+2. Place the 'export.xml' file in the same directory as this script
+3. Run the script and choose which health metric to analyze
+
+Author: Keith Rumjahn
+License: MIT
+Version: 1.0.0
+"""
+
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+import openai
+import os
+from dotenv import load_dotenv
 
 def parse_health_data(file_path, record_type):
+    """
+    Parse specific health metrics from Apple Health export.xml file.
+    
+    Args:
+        file_path (str): Path to the export.xml file
+        record_type (str): The type of health record to parse (e.g., 'HKQuantityTypeIdentifierStepCount')
+    
+    Returns:
+        pandas.DataFrame: DataFrame containing dates and values for the specified metric
+    """
     print(f"Starting to parse {record_type}...")
     dates = []
     values = []
@@ -26,13 +69,19 @@ def parse_health_data(file_path, record_type):
     print(f"Found {len(dates)} records")
     return pd.DataFrame({'date': dates, 'value': values})
 
-# Example analysis
 def analyze_steps():
-    # Make sure export.xml is in the same folder as this script
+    """
+    Analyze and visualize daily step count data.
+    Shows a time series plot of daily total steps and exports data to CSV.
+    """
     df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierStepCount')
     
     # Daily sum of steps
     daily_steps = df.groupby(df['date'].dt.date)['value'].sum()
+    
+    # Export to CSV
+    daily_steps.to_csv('steps_data.csv', header=True)
+    print("Steps data exported to 'steps_data.csv'")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -44,10 +93,18 @@ def analyze_steps():
     plt.show()
 
 def analyze_distance():
+    """
+    Analyze and visualize daily walking/running distance.
+    Shows a time series plot of daily total distance in kilometers and exports data to CSV.
+    """
     df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierDistanceWalkingRunning')
     
     # Daily sum of distance (in kilometers)
-    daily_distance = df.groupby(df['date'].dt.date)['value'].sum() / 1000  # Convert meters to kilometers
+    daily_distance = df.groupby(df['date'].dt.date)['value'].sum() / 1000
+    
+    # Export to CSV
+    daily_distance.to_csv('distance_data.csv', header=True)
+    print("Distance data exported to 'distance_data.csv'")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -59,10 +116,18 @@ def analyze_distance():
     plt.show()
 
 def analyze_heart_rate():
+    """
+    Analyze and visualize daily heart rate data.
+    Shows a time series plot of daily average heart rate in BPM and exports data to CSV.
+    """
     df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierHeartRate')
     
     # Daily average heart rate
     daily_hr = df.groupby(df['date'].dt.date)['value'].mean()
+    
+    # Export to CSV
+    daily_hr.to_csv('heart_rate_data.csv', header=True)
+    print("Heart rate data exported to 'heart_rate_data.csv'")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -74,6 +139,10 @@ def analyze_heart_rate():
     plt.show()
 
 def analyze_weight():
+    """
+    Analyze and visualize body weight data.
+    Shows a time series plot of daily weight measurements in kg.
+    """
     df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierBodyMass')
     
     # Daily weight (taking the last measurement of each day)
@@ -89,6 +158,10 @@ def analyze_weight():
     plt.show()
 
 def analyze_sleep():
+    """
+    Analyze and visualize sleep duration data.
+    Shows a time series plot of daily total sleep duration in hours.
+    """
     df = parse_health_data('export.xml', 'HKCategoryTypeIdentifierSleepAnalysis')
     
     # Convert to hours
@@ -107,21 +180,24 @@ def analyze_sleep():
     plt.show()
 
 def analyze_workouts():
+    """
+    Analyze and visualize WHOOP workout data from heart rate measurements.
+    Exports workout data to CSV and shows time series plot of daily workout durations.
+    """
     print("Analyzing workout data...")
     tree = ET.parse('export.xml')
     root = tree.getroot()
     
-    # Dictionary to store daily workout durations
     daily_workouts = {}
     
+    # Process records
     for record in root.findall('.//Record'):
         if record.get('sourceName') == 'WHOOP':
             try:
                 date = datetime.strptime(record.get('startDate'), '%Y-%m-%d %H:%M:%S %z')
-                day = date.date()  # Get just the date part
+                day = date.date()
                 heart_rate = float(record.get('value'))
                 
-                # Initialize the day if we haven't seen it before
                 if day not in daily_workouts:
                     daily_workouts[day] = {
                         'total_minutes': 0,
@@ -129,77 +205,146 @@ def analyze_workouts():
                         'measurement_count': 0
                     }
                 
-                # Add heart rate measurement
                 daily_workouts[day]['heart_rates'].append(heart_rate)
                 daily_workouts[day]['measurement_count'] += 1
                 
             except (ValueError, TypeError) as e:
                 continue
     
-    # Convert to DataFrame
-    workout_days = []
-    for day, data in daily_workouts.items():
-        # Estimate workout time (assuming measurements are roughly every 6 seconds)
-        estimated_minutes = data['measurement_count'] * (6/60)  # Convert to minutes
-        
-        # Calculate average heart rate only if we have measurements
-        if data['heart_rates']:
-            avg_hr = sum(data['heart_rates']) / len(data['heart_rates'])
-        else:
-            avg_hr = 0
-        
-        workout_days.append({
-            'date': day,
-            'duration_min': estimated_minutes,
-            'avg_heart_rate': avg_hr,
-            'measurements': data['measurement_count']
-        })
-    
-    if not workout_days:
+    if not daily_workouts:
         print("No workout data found!")
         return
         
+    # Convert to DataFrame with explicit data
+    workout_days = []
+    for day, data in daily_workouts.items():
+        estimated_minutes = data['measurement_count'] * (6/60)
+        avg_hr = sum(data['heart_rates']) / len(data['heart_rates']) if data['heart_rates'] else 0
+        
+        workout_days.append({
+            'date': day,
+            'duration_hours': estimated_minutes / 60,  # Convert to hours
+            'avg_heart_rate': round(avg_hr, 1),
+            'measurements': data['measurement_count']
+        })
+    
     df = pd.DataFrame(workout_days)
     df = df.sort_values('date')
     
+    # Export to CSV with more descriptive column names
+    export_df = df.copy()
+    export_df['date'] = export_df['date'].astype(str)  # Convert date to string for better CSV compatibility
+    export_df.to_csv('workout_data.csv', index=False)
+    print("\nWorkout data exported to 'workout_data.csv'")
+    print(f"Exported {len(export_df)} days of workout data")
+    
+    # Display first few rows of exported data
+    print("\nFirst few rows of exported data:")
+    print(export_df.head())
+    
     # Plot
     plt.figure(figsize=(12, 6))
-    plt.scatter(df['date'], df['duration_min']/60, alpha=0.5)  # Convert to hours
-    plt.plot(df['date'], df['duration_min']/60, alpha=0.3)     # Convert to hours
+    plt.scatter(df['date'], df['duration_hours'], alpha=0.5)
+    plt.plot(df['date'], df['duration_hours'], alpha=0.3)
     plt.title('Daily Workout Duration')
     plt.xlabel('Date')
     plt.ylabel('Hours')
     plt.grid(True)
-    
-    # Rotate x-axis labels for better readability
     plt.xticks(rotation=45)
-    
-    # Adjust layout to prevent label cutoff
     plt.tight_layout()
-    
     plt.show()
     
     # Print summary statistics
     print("\nWorkout Summary:")
     print(f"Total days with workouts: {len(df)}")
-    print(f"Average daily workout time: {df['duration_min'].mean()/60:.2f} hours")
-    print(f"Total time recorded: {df['duration_min'].sum()/60:.2f} hours")
+    print(f"Average daily workout time: {df['duration_hours'].mean():.2f} hours")
+    print(f"Total time recorded: {df['duration_hours'].sum():.2f} hours")
     
-    # Only print heart rate stats if we have valid heart rate data
     if df['avg_heart_rate'].mean() > 0:
         print(f"Average heart rate: {df['avg_heart_rate'].mean():.1f} BPM")
     
-    # Print some individual day details for verification
     print("\nRecent Days:")
     recent = df.sort_values('date', ascending=False).head(5)
     for _, day in recent.iterrows():
         print(f"\nDate: {day['date']}")
-        print(f"Duration: {day['duration_min']/60:.2f} hours")
+        print(f"Duration: {day['duration_hours']:.2f} hours")
         if day['avg_heart_rate'] > 0:
             print(f"Average Heart Rate: {day['avg_heart_rate']:.1f} BPM")
         print(f"Measurements: {day['measurements']}")
 
-if __name__ == "__main__":
+def analyze_with_chatgpt(csv_files):
+    """
+    Analyze health data using ChatGPT API.
+    """
+    try:
+        # Load API key from .env file
+        load_dotenv()
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print("Error: No OpenAI API key found in .env file")
+            return
+            
+        client = openai.OpenAI(api_key=api_key)
+        
+        # Prepare data for analysis
+        data_content = ""
+        files_found = False
+        
+        print("\nReading data files...")
+        for file_name, data_type in csv_files:
+            try:
+                with open(file_name, 'r') as file:
+                    content = file.read()
+                    print(f"Found {data_type} data in {file_name}")
+                    # Only read first 1000 characters to avoid token limits
+                    data_content += f"\n{data_type} Data (sample):\n{content[:1000]}\n"
+                    files_found = True
+            except FileNotFoundError:
+                print(f"Warning: {file_name} not found, skipping...")
+                continue
+        
+        if not files_found:
+            print("\nNo data files found! Please run some analyses first to generate CSV files.")
+            return
+        
+        print("\nSending data to ChatGPT for analysis...")
+        
+        # Prepare the prompt
+        prompt = f"""Analyze this Apple Health data and provide surprising insights:
+
+        {data_content}
+
+        Please focus on:
+        1. Notable patterns or trends
+        2. Unusual findings or correlations
+        3. Actionable health insights
+        4. Areas that need attention
+        """
+        
+        # Make API call with new format
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a health data analyst specializing in Apple Health data analysis."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        # Print analysis
+        print("\nChatGPT Analysis:")
+        print("================")
+        print(response.choices[0].message.content)
+        
+    except Exception as e:
+        print(f"Error during analysis: {str(e)}")
+        print("If this is an API error, check your OpenAI API key in the .env file")
+
+def main():
+    """
+    Main function providing an interactive menu to choose which health metric to analyze.
+    """
     while True:
         print("\nWhat would you like to analyze?")
         print("1. Steps")
@@ -208,9 +353,20 @@ if __name__ == "__main__":
         print("4. Weight")
         print("5. Sleep")
         print("6. Workouts")
-        print("7. Exit")
+        print("7. Analyze All Data with ChatGPT")
+        print("8. Exit")
         
-        choice = input("Enter your choice (1-7): ")
+        choice = input("Enter your choice (1-8): ")
+        
+        # List of available data files and their types
+        data_files = [
+            ('steps_data.csv', 'Steps'),
+            ('distance_data.csv', 'Distance'),
+            ('heart_rate_data.csv', 'Heart Rate'),
+            ('weight_data.csv', 'Weight'),
+            ('sleep_data.csv', 'Sleep'),
+            ('workout_data.csv', 'Workout')
+        ]
         
         if choice == '1':
             analyze_steps()
@@ -225,7 +381,12 @@ if __name__ == "__main__":
         elif choice == '6':
             analyze_workouts()
         elif choice == '7':
+            analyze_with_chatgpt(data_files)
+        elif choice == '8':
             print("Goodbye!")
             break
         else:
             print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
