@@ -289,20 +289,31 @@ def analyze_with_chatgpt(csv_files):
         client = openai.OpenAI(api_key=api_key)
         
         # Prepare data for analysis
-        data_content = ""
+        data_summary = {}
         files_found = False
         
-        print("\nReading data files...")
+        print("\nProcessing data files...")
         for file_name, data_type in csv_files:
             try:
-                with open(file_name, 'r') as file:
-                    content = file.read()
-                    print(f"Found {data_type} data in {file_name}")
-                    # Only read first 1000 characters to avoid token limits
-                    data_content += f"\n{data_type} Data (sample):\n{content[:1000]}\n"
-                    files_found = True
+                df = pd.read_csv(file_name)
+                print(f"Found {data_type} data in {file_name}")
+                
+                # Calculate meaningful statistics
+                data_summary[data_type] = {
+                    'total_records': len(df),
+                    'date_range': f"from {df['date'].min()} to {df['date'].max()}" if 'date' in df else 'N/A',
+                    'average': f"{df['value'].mean():.2f}" if 'value' in df else 'N/A',
+                    'max_value': f"{df['value'].max():.2f}" if 'value' in df else 'N/A',
+                    'min_value': f"{df['value'].min():.2f}" if 'value' in df else 'N/A',
+                    'data_sample': df.head(50).to_string()  # Include first 50 rows
+                }
+                files_found = True
+                
             except FileNotFoundError:
                 print(f"Warning: {file_name} not found, skipping...")
+                continue
+            except Exception as e:
+                print(f"Error processing {file_name}: {str(e)}")
                 continue
         
         if not files_found:
@@ -311,32 +322,49 @@ def analyze_with_chatgpt(csv_files):
         
         print("\nSending data to GPT-4 Turbo for analysis...")
         
-        # Prepare the prompt
-        prompt = f"""Analyze this Apple Health data and provide surprising insights:
-
-        {data_content}
-
-        Please focus on:
-        1. Notable patterns or trends
-        2. Unusual findings or correlations
-        3. Actionable health insights
-        4. Areas that need attention
+        # Prepare the prompt with comprehensive data
+        prompt = "Analyze this Apple Health data and provide detailed insights:\n\n"
+        
+        for data_type, summary in data_summary.items():
+            prompt += f"\n{data_type} Data Summary:\n"
+            prompt += f"- Total Records: {summary['total_records']}\n"
+            prompt += f"- Date Range: {summary['date_range']}\n"
+            prompt += f"- Average Value: {summary['average']}\n"
+            prompt += f"- Maximum Value: {summary['max_value']}\n"
+            prompt += f"- Minimum Value: {summary['min_value']}\n"
+            prompt += f"\nSample Data:\n{summary['data_sample']}\n"
+            prompt += "\n" + "="*50 + "\n"
+        
+        prompt += """
+        Please provide a comprehensive analysis including:
+        1. Notable patterns or trends in the data
+        2. Unusual findings or correlations between different metrics
+        3. Actionable health insights based on the data
+        4. Areas that might need attention or improvement
+        5. Comparison to general health guidelines where applicable
+        6. Statistical significance of any findings
+        7. Recommendations for improvement
         """
         
-        # Make API call with new format
+        # Make API call with GPT-4 Turbo
         response = client.chat.completions.create(
             model="gpt-4-1106-preview",
             messages=[
-                {"role": "system", "content": "You are a health data analyst specializing in Apple Health data analysis."},
+                {
+                    "role": "system", 
+                    "content": "You are an expert health data analyst specializing in Apple Health data analysis. \
+                               Provide detailed, actionable insights based on the data. Use statistical analysis \
+                               where appropriate and focus on identifying meaningful patterns and trends."
+                },
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=1000
+            max_tokens=4096
         )
         
         # Print analysis
         print("\nGPT-4 Turbo Analysis:")
-        print("====================")
+        print("===================")
         print(response.choices[0].message.content)
         
     except Exception as e:
