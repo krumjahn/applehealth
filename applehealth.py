@@ -273,12 +273,47 @@ def analyze_workouts():
             print(f"Average Heart Rate: {day['avg_heart_rate']:.1f} BPM")
         print(f"Measurements: {day['measurements']}")
 
-def analyze_with_chatgpt(csv_files):
+def analyze_with_chatgpt(csv_files, temperature=None):
     """
     Analyze health data using ChatGPT API.
     Uses GPT-4 Turbo for enhanced analysis capabilities.
+    
+    Args:
+        csv_files: List of CSV files to analyze
+        temperature: Optional float between 0 and 1 for AI response variation
+                    - 0.0: Most focused, consistent analysis
+                    - 0.3: Default, balanced analysis
+                    - 0.7: More creative insights
+                    - 1.0: Most varied analysis
     """
     try:
+        # Get temperature setting from user if not provided
+        if temperature is None:
+            print("\nAI Analysis Temperature Setting:")
+            print("Lower = more focused, consistent analysis")
+            print("Higher = more creative, varied insights")
+            print("Recommended settings:")
+            print("  0.3 = Default, balanced analysis (recommended for health data)")
+            print("  0.1 = Most focused, statistical analysis")
+            print("  0.7 = More creative insights")
+            print("  1.0 = Most varied analysis")
+            
+            temp_input = input("\nEnter temperature (0.0-1.0) or press Enter for default (0.3): ").strip()
+            
+            if temp_input == "":
+                temperature = 0.3
+            else:
+                try:
+                    temperature = float(temp_input)
+                    if not 0 <= temperature <= 1:
+                        print("Invalid temperature. Using default (0.3)")
+                        temperature = 0.3
+                except ValueError:
+                    print("Invalid input. Using default temperature (0.3)")
+                    temperature = 0.3
+        
+        print(f"\nUsing temperature: {temperature}")
+        
         # Load API key from .env file
         load_dotenv()
         api_key = os.getenv('OPENAI_API_KEY')
@@ -358,13 +393,13 @@ def analyze_with_chatgpt(csv_files):
                 },
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
+            temperature=temperature,
             max_tokens=4096
         )
         
-        # Print analysis
-        print("\nGPT-4 Turbo Analysis:")
-        print("===================")
+        # Print analysis with temperature info
+        print(f"\nGPT-4 Turbo Analysis (Temperature: {temperature}):")
+        print("=" * 50)
         print(response.choices[0].message.content)
         
     except Exception as e:
@@ -384,9 +419,10 @@ def main():
         print("5. Sleep")
         print("6. Workouts")
         print("7. Analyze All Data with ChatGPT")
-        print("8. Exit")
+        print("8. Advanced AI Settings")
+        print("9. Exit")
         
-        choice = input("Enter your choice (1-8): ")
+        choice = input("Enter your choice (1-9): ")
         
         # List of available data files and their types
         data_files = [
@@ -413,6 +449,16 @@ def main():
         elif choice == '7':
             analyze_with_chatgpt(data_files)
         elif choice == '8':
+            print("\nAdvanced AI Settings:")
+            print("Current default temperature: 0.3")
+            print("\nTemperature Guide:")
+            print("0.0-0.3: Best for statistical analysis and consistent insights")
+            print("0.3-0.5: Balanced analysis with some variation")
+            print("0.5-0.7: More creative insights and patterns")
+            print("0.7-1.0: Most varied and exploratory analysis")
+            print("\nRecommended: 0.3 for health data analysis")
+            input("\nPress Enter to continue...")
+        elif choice == '9':
             print("Goodbye!")
             break
         else:
