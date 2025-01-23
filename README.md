@@ -1,4 +1,4 @@
-# Apple Health Data Analyzer
+# Apple Health A.I. Data Analyzer
 
 A Python tool that transforms Apple Health export data into insightful visualizations and analytics, with AI-powered analysis. Easily track your fitness journey with detailed analysis of steps, workouts, heart rate, sleep, and more. Features specialized support for WHOOP workout data and ChatGPT integration for personalized insights.
 
