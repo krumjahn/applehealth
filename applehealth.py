@@ -35,6 +35,7 @@ import matplotlib.pyplot as plt
 import openai
 import os
 from dotenv import load_dotenv
+import sys
 
 def parse_health_data(file_path, record_type):
     """
@@ -388,5 +389,31 @@ def main():
         else:
             print("Invalid choice. Please try again.")
 
+def check_requirements():
+    """Check if all required packages are installed"""
+    try:
+        import pandas
+        import matplotlib
+        import openai
+        from dotenv import load_dotenv
+        print("All required packages are installed!")
+    except ImportError as e:
+        print(f"Missing required package: {str(e)}")
+        print("\nPlease install required packages using:")
+        print("pip install -r ../requirements.txt")
+        exit(1)
+
+def check_env():
+    """Check if .env file exists and contains API key"""
+    if not os.path.exists('.env'):
+        print("Warning: .env file not found!")
+        print("Please create a .env file with your OpenAI API key:")
+        print("OPENAI_API_KEY=your-api-key-here")
+        return False
+    return True
+
 if __name__ == "__main__":
+    check_requirements()
+    if not check_env():
+        print("\nContinuing without AI analysis capabilities...")
     main()
