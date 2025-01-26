@@ -17,6 +17,9 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 🔄 WHOOP workout integration
 
 ## Example A.I. analysis
+
+[Read more here](https://rumjahn.com/how-i-used-a-i-to-analyze-8-years-of-apple-health-fitness-data-to-uncover-actionable-insights/)
+
 Here are the most surprising insights from your health data:
 
 ```
