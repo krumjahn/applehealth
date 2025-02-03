@@ -17,6 +17,7 @@ Requirements:
 - xml.etree.ElementTree
 - openai
 - dotenv
+- ollama
 
 Usage:
 1. Export your Apple Health data from the Health app on your iPhone
@@ -36,6 +37,7 @@ import openai
 import os
 from dotenv import load_dotenv
 import sys
+import ollama
 
 def parse_health_data(file_path, record_type):
     """
@@ -273,57 +275,15 @@ def analyze_workouts():
             print(f"Average Heart Rate: {day['avg_heart_rate']:.1f} BPM")
         print(f"Measurements: {day['measurements']}")
 
-def analyze_with_chatgpt(csv_files, temperature=None):
+def analyze_with_ollama(csv_files):
     """
-    Analyze health data using ChatGPT API.
-    Uses GPT-4 Turbo for enhanced analysis capabilities.
+    Analyze health data using a local Ollama LLM.
     
     Args:
         csv_files: List of CSV files to analyze
-        temperature: Optional float between 0 and 1 for AI response variation
-                    - 0.0: Most focused, consistent analysis
-                    - 0.3: Default, balanced analysis
-                    - 0.7: More creative insights
-                    - 1.0: Most varied analysis
     """
     try:
-        # Get temperature setting from user if not provided
-        if temperature is None:
-            print("\nAI Analysis Temperature Setting:")
-            print("Lower = more focused, consistent analysis")
-            print("Higher = more creative, varied insights")
-            print("Recommended settings:")
-            print("  0.3 = Default, balanced analysis (recommended for health data)")
-            print("  0.1 = Most focused, statistical analysis")
-            print("  0.7 = More creative insights")
-            print("  1.0 = Most varied analysis")
-            
-            temp_input = input("\nEnter temperature (0.0-1.0) or press Enter for default (0.3): ").strip()
-            
-            if temp_input == "":
-                temperature = 0.3
-            else:
-                try:
-                    temperature = float(temp_input)
-                    if not 0 <= temperature <= 1:
-                        print("Invalid temperature. Using default (0.3)")
-                        temperature = 0.3
-                except ValueError:
-                    print("Invalid input. Using default temperature (0.3)")
-                    temperature = 0.3
-        
-        print(f"\nUsing temperature: {temperature}")
-        
-        # Load API key from .env file
-        load_dotenv()
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            print("Error: No OpenAI API key found in .env file")
-            return
-            
-        client = openai.OpenAI(api_key=api_key)
-        
-        # Prepare data for analysis
+        # Add data preparation code
         data_summary = {}
         files_found = False
         
@@ -333,33 +293,26 @@ def analyze_with_chatgpt(csv_files, temperature=None):
                 df = pd.read_csv(file_name)
                 print(f"Found {data_type} data in {file_name}")
                 
-                # Calculate meaningful statistics
                 data_summary[data_type] = {
                     'total_records': len(df),
                     'date_range': f"from {df['date'].min()} to {df['date'].max()}" if 'date' in df else 'N/A',
                     'average': f"{df['value'].mean():.2f}" if 'value' in df else 'N/A',
                     'max_value': f"{df['value'].max():.2f}" if 'value' in df else 'N/A',
                     'min_value': f"{df['value'].min():.2f}" if 'value' in df else 'N/A',
-                    'data_sample': df.head(50).to_string()  # Include first 50 rows
+                    'data_sample': df.head(50).to_string()
                 }
                 files_found = True
                 
-            except FileNotFoundError:
-                print(f"Warning: {file_name} not found, skipping...")
-                continue
             except Exception as e:
                 print(f"Error processing {file_name}: {str(e)}")
                 continue
-        
+
         if not files_found:
             print("\nNo data files found! Please run some analyses first to generate CSV files.")
             return
-        
-        print("\nSending data to GPT-4 Turbo for analysis...")
-        
-        # Prepare the prompt with comprehensive data
+
+        # Build the prompt
         prompt = "Analyze this Apple Health data and provide detailed insights:\n\n"
-        
         for data_type, summary in data_summary.items():
             prompt += f"\n{data_type} Data Summary:\n"
             prompt += f"- Total Records: {summary['total_records']}\n"
@@ -369,42 +322,37 @@ def analyze_with_chatgpt(csv_files, temperature=None):
             prompt += f"- Minimum Value: {summary['min_value']}\n"
             prompt += f"\nSample Data:\n{summary['data_sample']}\n"
             prompt += "\n" + "="*50 + "\n"
-        
-        prompt += """
-        Please provide a comprehensive analysis including:
+
+        prompt += """Please provide a comprehensive analysis including:
         1. Notable patterns or trends in the data
         2. Unusual findings or correlations between different metrics
         3. Actionable health insights based on the data
         4. Areas that might need attention or improvement
-        5. Comparison to general health guidelines where applicable
-        6. Statistical significance of any findings
-        7. Recommendations for improvement
         """
-        
-        # Make API call with GPT-4 Turbo
-        response = client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {
-                    "role": "system", 
-                    "content": "You are an expert health data analyst specializing in Apple Health data analysis. \
-                               Provide detailed, actionable insights based on the data. Use statistical analysis \
-                               where appropriate and focus on identifying meaningful patterns and trends."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=temperature,
-            max_tokens=4096
+
+        # Rest of the Ollama API call
+        print("\nSending data to Deepseek-R1 via Ollama...")
+        response = ollama.chat(
+            model='deepseek-r1',
+            messages=[{
+                "role": "system",
+                "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."
+            }, {
+                "role": "user", 
+                "content": prompt
+            }],
+            options={
+                'temperature': 0.3,
+                'num_ctx': 6144
+            }
         )
-        
-        # Print analysis with temperature info
-        print(f"\nGPT-4 Turbo Analysis (Temperature: {temperature}):")
+
+        print("\nDeepseek-R1 Analysis:")
         print("=" * 50)
-        print(response.choices[0].message.content)
-        
+        print(response['message']['content'])
+
     except Exception as e:
         print(f"Error during analysis: {str(e)}")
-        print("If this is an API error, check your OpenAI API key in the .env file")
 
 def main():
     """
@@ -419,10 +367,11 @@ def main():
         print("5. Sleep")
         print("6. Workouts")
         print("7. Analyze All Data with ChatGPT")
-        print("8. Advanced AI Settings")
-        print("9. Exit")
+        print("8. Analyze with Local LLM (Ollama)")
+        print("9. Advanced AI Settings")
+        print("10. Exit")
         
-        choice = input("Enter your choice (1-9): ")
+        choice = input("Enter your choice (1-10): ")
         
         # List of available data files and their types
         data_files = [
@@ -449,6 +398,8 @@ def main():
         elif choice == '7':
             analyze_with_chatgpt(data_files)
         elif choice == '8':
+            analyze_with_ollama(data_files)
+        elif choice == '9':
             print("\nAdvanced AI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -458,7 +409,7 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '9':
+        elif choice == '10':
             print("Goodbye!")
             break
         else:
