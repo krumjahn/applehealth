@@ -15,6 +15,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - ⚖️ Weight tracking over time
 - 😴 Sleep pattern analysis
 - 🔄 WHOOP workout integration
+- 🧠 **Local LLM Support** (New!) - Analyze data privately using Ollama models like Deepseek-R1
 
 ## Example A.I. analysis
 
@@ -73,6 +74,17 @@ pip install -r requirements.txt
      OPENAI_API_KEY=your-api-key-here
      ```
 
+3. **Set up Ollama for local AI analysis**:
+   - Install Ollama: https://ollama.ai/download
+   - Start Ollama service (keep running in background):
+     ```bash
+     ollama serve
+     ```
+   - Download Deepseek-R1 model:
+     ```bash
+     ollama pull deepseek-r1
+     ```
+
 ## 📱 Getting Your Health Data
 
 1. On your iPhone:
@@ -99,8 +111,10 @@ Choose from the menu:
 4. Weight Tracking
 5. Sleep Analysis
 6. Workout Analysis
-7. **Analyze All Data with ChatGPT** (New!)
-8. Exit
+7. Analyze All Data with ChatGPT
+8. Analyze with Local LLM (Ollama)
+9. Advanced AI Settings
+10. Exit
 
 ### 🤖 AI Analysis
 
@@ -112,6 +126,25 @@ The new AI analysis feature (Option 7) will:
 - Highlight unusual findings
 
 Note: You must run at least one other analysis option first to generate the data files for AI analysis.
+
+### 🖥️ Local LLM Analysis
+
+The new local analysis feature (Option 8) will:
+- Process data entirely on your machine
+- Use Ollama with Deepseek-R1 by default
+- Provide technical analysis of health patterns
+- No data leaves your computer
+
+**To use different models**:
+1. Edit `applehealth.py` and find the `analyze_with_ollama()` function
+2. Change the model name in this line:
+   ```python
+   model='deepseek-r1'  # Change to 'llama2', 'mistral', etc.
+   ```
+3. Pull your desired model first:
+   ```bash
+   ollama pull <model-name>
+   ```
 
 ## 📊 Example Output
 
@@ -150,6 +183,8 @@ This tool processes your health data locally on your machine. When using the AI 
 - WHOOP integration limited to workout data
 - Sleep analysis assumes data is in standard Apple Health format
 - AI analysis requires OpenAI API key and internet connection
+- Local LLM analysis requires minimum 8GB RAM for decent performance
+- Model quality depends on local hardware capabilities
 
 ## 🔜 Roadmap
 
@@ -158,6 +193,8 @@ This tool processes your health data locally on your machine. When using the AI 
 - [ ] More detailed AI analysis
 - [ ] Export capabilities
 - [ ] Configuration options
+- [ ] Add model selection UI
+- [ ] Support multiple local LLM providers
 
 ## 📄 License
 
