@@ -39,11 +39,11 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 ```
 
 ## Examples of charts
+
 ![workouts](https://github.com/user-attachments/assets/6c373d3e-e038-4428-a8be-7c86c973a662)
 ![Figure_1](https://github.com/user-attachments/assets/fd25d50b-d303-46fe-aac3-0bba9c3295b7)
 ![distance](https://github.com/user-attachments/assets/72009a90-3687-4008-a208-a0f1702d3843)
 ![heartrate](https://github.com/user-attachments/assets/7f739661-f822-49e7-b79c-209c5164ecdc)
-
 
 ## 📋 Requirements
 
@@ -57,30 +57,36 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 ## 🛠️ Installation
 
 1. Clone this repository:
-```
-git clone https://github.com/krumjahn/applehealth.git
-```
+
+   ```
+   git clone https://github.com/krumjahn/applehealth.git
+   ```
 
 2. Install dependencies:
-```
-pip install -r requirements.txt
-```
+
+   ```
+   pip install -r requirements.txt
+   ```
 
 3. Set up OpenAI API key:
    - Get your API key from [OpenAI Platform](https://platform.openai.com/)
    - Create a `.env` file in the project directory
    - Add your API key:
+
      ```
      OPENAI_API_KEY=your-api-key-here
      ```
 
-3. **Set up Ollama for local AI analysis**:
-   - Install Ollama: https://ollama.ai/download
+4. **Set up Ollama for local AI analysis**:
+   - Install Ollama: <https://ollama.ai/download>
    - Start Ollama service (keep running in background):
+
      ```bash
      ollama serve
      ```
+
    - Download Deepseek-R1 model:
+
      ```bash
      ollama pull deepseek-r1
      ```
@@ -104,7 +110,22 @@ Run the script:
 python applehealth.py
 ```
 
+## 🐳 Docker Usage
+
+1. Build the Docker image:
+
+   ```bash
+   docker build -t applehealth .
+   ```
+
+2. Run the Docker container:
+
+   ```bash
+   docker run --network="host" -v $(pwd)/export.xml:/app/export.xml -it applehealth
+   ```
+
 Choose from the menu:
+
 1. Steps Analysis
 2. Distance Tracking
 3. Heart Rate Analysis
@@ -119,6 +140,7 @@ Choose from the menu:
 ### 🤖 AI Analysis
 
 The new AI analysis feature (Option 7) will:
+
 - Analyze all your exported health data
 - Provide personalized insights using ChatGPT
 - Identify patterns and trends
@@ -130,18 +152,23 @@ Note: You must run at least one other analysis option first to generate the data
 ### 🖥️ Local LLM Analysis
 
 The new local analysis feature (Option 8) will:
+
 - Process data entirely on your machine
 - Use Ollama with Deepseek-R1 by default
 - Provide technical analysis of health patterns
 - No data leaves your computer
 
 **To use different models**:
+
 1. Edit `applehealth.py` and find the `analyze_with_ollama()` function
 2. Change the model name in this line:
+
    ```python
    model='deepseek-r1'  # Change to 'llama2', 'mistral', etc.
    ```
+
 3. Pull your desired model first:
+
    ```bash
    ollama pull <model-name>
    ```
@@ -173,6 +200,7 @@ Contributions are welcome! Here's how you can help:
 ## 📝 Data Privacy
 
 This tool processes your health data locally on your machine. When using the AI analysis feature:
+
 - Only aggregated statistics are sent to OpenAI
 - No personal identifiers are shared
 - Data is processed according to OpenAI's privacy policy
