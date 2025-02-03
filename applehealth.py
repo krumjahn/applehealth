@@ -151,6 +151,10 @@ def analyze_weight():
     # Daily weight (taking the last measurement of each day)
     daily_weight = df.groupby(df['date'].dt.date)['value'].last()
     
+    # Export to CSV
+    daily_weight.to_csv('weight_data.csv', header=True)
+    print("Weight data exported to 'weight_data.csv'")
+
     # Plot
     plt.figure(figsize=(12, 6))
     daily_weight.plot()
