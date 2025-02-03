@@ -53,18 +53,17 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 - openai
 - python-dotenv
 - xml.etree.ElementTree (included in Python standard library)
-
 ## 🛠️ Installation
 
 1. Clone this repository:
-```
-git clone https://github.com/krumjahn/applehealth.git
-```
+   ```
+   git clone https://github.com/krumjahn/applehealth.git
+   ```
 
 2. Install dependencies:
-```
-pip install -r requirements.txt
-```
+   ```
+   pip install -r requirements.txt
+   ```
 
 3. Set up OpenAI API key:
    - Get your API key from [OpenAI Platform](https://platform.openai.com/)
@@ -74,7 +73,7 @@ pip install -r requirements.txt
      OPENAI_API_KEY=your-api-key-here
      ```
 
-3. **Set up Ollama for local AI analysis**:
+4. **Set up Ollama for local AI analysis**:
    - Install Ollama: https://ollama.ai/download
    - Start Ollama service (keep running in background):
      ```bash
@@ -103,6 +102,18 @@ Run the script:
 ```bash
 python applehealth.py
 ```
+
+## 🐳 Docker Usage
+
+1. Build the Docker image:
+   ```bash
+   docker build -t applehealth .
+   ```
+
+2. Run the Docker container:
+   ```bash
+   docker run --network="host" -v $(pwd)/export.xml:/app/export.xml -it applehealth
+   ```
 
 Choose from the menu:
 1. Steps Analysis
