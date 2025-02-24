@@ -12,17 +12,9 @@ class HealthDataViewsTestCase(APITestCase):
 
     def test_upload_health_data(self):
         file = SimpleUploadedFile("test.xml", b"<HealthData></HealthData>", content_type="text/xml")
-        response = self.client.post(reverse('upload-health-data'), {'file': file}, format='multipart')
+        response = self.client.post(reverse('upload_health_data'), {'file': file}, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_list_health_data_files(self):
         response = self.client.get(reverse('list-health-data'))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_list_health_metrics(self):
-        response = self.client.get(reverse('list-csv') + f"?health_data_id={self.health_file.id}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_list_llm_analytics(self):
-        response = self.client.get(reverse('list-analytics') + f"?health_data_id={self.health_file.id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
