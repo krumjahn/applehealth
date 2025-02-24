@@ -1,1 +1,6 @@
-export.xml
+.venv
+.env
+health_metrics
+health_data
+zerofcks.db
+.idea
