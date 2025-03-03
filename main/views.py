@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pandas as pd
 import requests
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -343,3 +343,39 @@ class LLMAnalyticsListView(APIView):
         llm_data = LLMAnalytics.objects.filter(health_data_id=health_data_id)
         serializer = LLMAnalyticsSerializer(llm_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FileDownloadView(APIView):
+    """
+    View to download files stored in the PostgreSQL database.
+    """
+    def get(self, request, path):
+        from django.db import connection
+        import base64
+        
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT content FROM file_uploads WHERE name = %s",
+            [path]
+        )
+        row = cursor.fetchone()
+        
+        if row is None:
+            return Response({'error': f'File {path} not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        content = base64.b64decode(row[0])
+        
+        # Determine content type based on file extension
+        content_type = 'application/octet-stream'  # Default
+        if path.endswith('.csv'):
+            content_type = 'text/csv'
+        elif path.endswith('.xml'):
+            content_type = 'application/xml'
+        elif path.endswith('.json'):
+            content_type = 'application/json'
+        elif path.endswith('.txt'):
+            content_type = 'text/plain'
+        
+        response = HttpResponse(content, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(path)}"'
+        return response

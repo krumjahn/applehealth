@@ -14,4 +14,7 @@ urlpatterns = [
     path('list/export', HealthDataFileListView.as_view(), name='list-health-data'),
     path('list/csv', HealthMetricListView.as_view(), name='list-csv'),
     path('list/analytics', LLMAnalyticsListView.as_view(), name='list-analytics'),
+    
+    # File download URL
+    path('files/<path:path>', FileDownloadView.as_view(), name='file_download'),
 ]
