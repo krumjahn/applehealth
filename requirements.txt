@@ -1,5 +1,7 @@
-pandas>=1.0.0
-matplotlib>=3.0.0
-openai>=0.27.0
-python-dotenv>=0.19.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+python-dotenv>=1.0.0
+openai>=1.0.0
+PyQt6>=6.6.0
+py2app>=0.28.0
 ollama>=0.1.0

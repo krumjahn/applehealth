@@ -31,7 +31,8 @@ Version: 1.0.0
 
 import xml.etree.ElementTree as ET
 from datetime import datetime
-import pandas as pd
+from pandas import DataFrame, read_csv
+from pandas.core.groupby import DataFrameGroupBy
 import matplotlib.pyplot as plt
 import openai
 import os
@@ -70,20 +71,21 @@ def parse_health_data(file_path, record_type):
                 continue
     
     print(f"Found {len(dates)} records")
-    return pd.DataFrame({'date': dates, 'value': values})
+    return DataFrame({'date': dates, 'value': values})
 
 def analyze_steps():
     """
     Analyze and visualize daily step count data.
     Shows a time series plot of daily total steps and exports data to CSV.
     """
-    df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierStepCount')
+    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    df = parse_health_data(export_path, 'HKQuantityTypeIdentifierStepCount')
     
     # Check if any step data was found
     if len(df) == 0:
         print("No step data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'value']).to_csv('steps_data.csv', index=False)
+        DataFrame(columns=['date', 'value']).to_csv('steps_data.csv', index=False)
         print("Created empty steps_data.csv file.")
         return
     
@@ -108,13 +110,14 @@ def analyze_distance():
     Analyze and visualize daily walking/running distance.
     Shows a time series plot of daily total distance in kilometers and exports data to CSV.
     """
-    df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierDistanceWalkingRunning')
+    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    df = parse_health_data(export_path, 'HKQuantityTypeIdentifierDistanceWalkingRunning')
     
     # Check if any distance data was found
     if len(df) == 0:
         print("No distance data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'value']).to_csv('distance_data.csv', index=False)
+        DataFrame(columns=['date', 'value']).to_csv('distance_data.csv', index=False)
         print("Created empty distance_data.csv file.")
         return
     
@@ -139,13 +142,14 @@ def analyze_heart_rate():
     Analyze and visualize daily heart rate data.
     Shows a time series plot of daily average heart rate in BPM and exports data to CSV.
     """
-    df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierHeartRate')
+    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    df = parse_health_data(export_path, 'HKQuantityTypeIdentifierHeartRate')
     
     # Check if any heart rate data was found
     if len(df) == 0:
         print("No heart rate data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'value']).to_csv('heart_rate_data.csv', index=False)
+        DataFrame(columns=['date', 'value']).to_csv('heart_rate_data.csv', index=False)
         print("Created empty heart_rate_data.csv file.")
         return
     
@@ -170,13 +174,14 @@ def analyze_weight():
     Analyze and visualize body weight data.
     Shows a time series plot of daily weight measurements in kg.
     """
-    df = parse_health_data('export.xml', 'HKQuantityTypeIdentifierBodyMass')
+    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    df = parse_health_data(export_path, 'HKQuantityTypeIdentifierBodyMass')
     
     # Check if any weight data was found
     if len(df) == 0:
         print("No weight data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'value']).to_csv('weight_data.csv', index=False)
+        DataFrame(columns=['date', 'value']).to_csv('weight_data.csv', index=False)
         print("Created empty weight_data.csv file.")
         return
     
@@ -201,96 +206,237 @@ def analyze_sleep():
     Analyze and visualize sleep duration data.
     Shows a time series plot of daily total sleep duration in hours.
     """
-    df = parse_health_data('export.xml', 'HKCategoryTypeIdentifierSleepAnalysis')
-    
-    # Check if any sleep data was found
-    if len(df) == 0:
-        print("No sleep data found in the export file.")
-        # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'value']).to_csv('sleep_data.csv', index=False)
-        print("Created empty sleep_data.csv file.")
-        return
-    
-    # Convert to hours
-    df['value'] = df['value'] / 3600  # assuming the value is in seconds
-    
-    # Daily total sleep
-    daily_sleep = df.groupby(df['date'].dt.date)['value'].sum()
-    
-    # Export to CSV
-    daily_sleep.to_csv('sleep_data.csv', header=True)
-    print("Sleep data exported to 'sleep_data.csv'")
-    
-    # Plot
-    plt.figure(figsize=(12, 6))
-    daily_sleep.plot()
-    plt.title('Daily Sleep Duration')
-    plt.xlabel('Date')
-    plt.ylabel('Sleep Duration (hours)')
-    plt.grid(True)
-    plt.show()
-
-def analyze_workouts():
-    """
-    Analyze and visualize WHOOP workout data from heart rate measurements.
-    Exports workout data to CSV and shows time series plot of daily workout durations.
-    """
-    print("Analyzing workout data...")
-    tree = ET.parse('export.xml')
+    print("Analyzing sleep data...")
+    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    tree = ET.parse(export_path)
     root = tree.getroot()
     
-    daily_workouts = {}
+    sleep_records = []
     
-    # Process records
+    # Process sleep records
     for record in root.findall('.//Record'):
-        if record.get('sourceName') == 'WHOOP':
+        if record.get('type') == 'HKCategoryTypeIdentifierSleepAnalysis':
             try:
-                date = datetime.strptime(record.get('startDate'), '%Y-%m-%d %H:%M:%S %z')
-                day = date.date()
-                heart_rate = float(record.get('value'))
+                start_date_str = record.get('startDate')
+                end_date_str = record.get('endDate')
+                sleep_value = record.get('value')
+                source_name = record.get('sourceName', 'Unknown')
                 
-                if day not in daily_workouts:
-                    daily_workouts[day] = {
-                        'total_minutes': 0,
-                        'heart_rates': [],
-                        'measurement_count': 0
-                    }
+                if not start_date_str or not end_date_str or not sleep_value:
+                    continue
+                    
+                # Parse dates
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S %z')
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S %z')
                 
-                daily_workouts[day]['heart_rates'].append(heart_rate)
-                daily_workouts[day]['measurement_count'] += 1
+                # Calculate duration in minutes
+                duration_minutes = (end_date - start_date).total_seconds() / 60
+                
+                # Classify sleep type
+                sleep_type = 'Unknown'
+                if 'InBed' in sleep_value:
+                    sleep_type = 'In Bed'
+                elif 'AsleepUnspecified' in sleep_value:
+                    sleep_type = 'Asleep'
+                elif 'AsleepREM' in sleep_value:
+                    sleep_type = 'REM Sleep'
+                elif 'AsleepCore' in sleep_value:
+                    sleep_type = 'Core Sleep'
+                elif 'AsleepDeep' in sleep_value:
+                    sleep_type = 'Deep Sleep'
+                elif 'Awake' in sleep_value:
+                    sleep_type = 'Awake'
+                
+                sleep_records.append({
+                    'date': start_date.date(),
+                    'start_time': start_date.time(),
+                    'end_time': end_date.time(),
+                    'duration_minutes': round(duration_minutes, 1),
+                    'duration_hours': round(duration_minutes / 60, 2),
+                    'sleep_type': sleep_type,
+                    'sleep_value': sleep_value,
+                    'source': source_name
+                })
                 
             except (ValueError, TypeError) as e:
                 continue
     
-    if not daily_workouts:
+    if not sleep_records:
+        print("No sleep data found!")
+        return
+        
+    df = DataFrame(sleep_records)
+    df = df.sort_values('date')
+    
+    # Export to CSV
+    export_df = df.copy()
+    export_df['date'] = export_df['date'].astype(str)
+    export_df.to_csv('sleep_data.csv', index=False)
+    print(f"\nSleep data exported to 'sleep_data.csv'")
+    print(f"Exported {len(export_df)} sleep records")
+    
+    # Display first few rows
+    print("\nFirst few rows of exported data:")
+    print(export_df.head())
+    
+    # Calculate daily sleep totals (excluding 'Awake' periods for actual sleep time)
+    sleep_only = df[~df['sleep_type'].isin(['Awake', 'In Bed'])]
+    daily_sleep = sleep_only.groupby('date')['duration_hours'].sum()
+    
+    # Also calculate total time in bed
+    in_bed_data = df[df['sleep_type'] == 'In Bed']
+    daily_in_bed = in_bed_data.groupby('date')['duration_hours'].sum()
+    
+    # Plot
+    plt.figure(figsize=(12, 8))
+    
+    # Plot 1: Daily sleep duration
+    plt.subplot(2, 1, 1)
+    if len(daily_sleep) > 0:
+        daily_sleep.plot(kind='line', marker='o', alpha=0.7)
+        plt.title('Daily Sleep Duration (Excluding Awake Time)')
+        plt.xlabel('Date')
+        plt.ylabel('Sleep Duration (hours)')
+        plt.grid(True, alpha=0.3)
+        plt.xticks(rotation=45)
+    
+    # Plot 2: Sleep type breakdown over time
+    plt.subplot(2, 1, 2)
+    sleep_type_daily = df.groupby(['date', 'sleep_type'])['duration_hours'].sum().unstack(fill_value=0)
+    sleep_type_daily.plot(kind='area', stacked=True, alpha=0.7)
+    plt.title('Daily Sleep Composition by Type')
+    plt.xlabel('Date')
+    plt.ylabel('Duration (hours)')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Print summary statistics
+    print(f"\nSleep Summary:")
+    print(f"Total sleep records: {len(df)}")
+    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
+    
+    if len(daily_sleep) > 0:
+        print(f"Average nightly sleep: {daily_sleep.mean():.1f} hours")
+        print(f"Total sleep time: {daily_sleep.sum():.1f} hours")
+    
+    # Sleep type breakdown
+    print(f"\nSleep Type Breakdown:")
+    type_summary = df.groupby('sleep_type').agg({
+        'duration_hours': ['count', 'sum', 'mean']
+    }).round(2)
+    for sleep_type in df['sleep_type'].unique():
+        records = df[df['sleep_type'] == sleep_type]
+        total_hours = records['duration_hours'].sum()
+        avg_duration = records['duration_hours'].mean()
+        count = len(records)
+        print(f"  {sleep_type}: {count} records, {total_hours:.1f} total hours (avg {avg_duration:.1f}h per record)")
+    
+    # Source breakdown
+    print(f"\nData Sources:")
+    for source in df['source'].unique():
+        count = len(df[df['source'] == source])
+        print(f"  {source}: {count} records")
+    
+    print(f"\nRecent Sleep Records:")
+    recent = df.sort_values('date', ascending=False).head(10)
+    for _, record in recent.iterrows():
+        print(f"\nDate: {record['date']} ({record['start_time']} - {record['end_time']})")
+        print(f"Type: {record['sleep_type']}")
+        print(f"Duration: {record['duration_hours']:.1f} hours")
+        print(f"Source: {record['source']}")
+
+def analyze_workouts():
+    """
+    Analyze and visualize Apple Workout data from export.xml.
+    Exports workout data to CSV and shows time series plot of daily workout durations.
+    """
+    print("Analyzing workout data...")
+    tree = ET.parse('../export.xml' if not os.path.exists('export.xml') else 'export.xml')
+    root = tree.getroot()
+    
+    workouts = []
+    
+    # Process Workout elements
+    for workout in root.findall('.//Workout'):
+        try:
+            # Extract basic workout info
+            activity_type = workout.get('workoutActivityType', 'Unknown')
+            duration_str = workout.get('duration')
+            duration_unit = workout.get('durationUnit', 'min')
+            start_date_str = workout.get('startDate')
+            end_date_str = workout.get('endDate')
+            source_name = workout.get('sourceName', 'Unknown')
+            
+            if not duration_str or not start_date_str:
+                continue
+                
+            # Parse dates
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S %z')
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S %z')
+            
+            # Convert duration to minutes
+            duration_value = float(duration_str)
+            if duration_unit == 'min':
+                duration_minutes = duration_value
+            elif duration_unit == 'sec':
+                duration_minutes = duration_value / 60
+            elif duration_unit == 'h':
+                duration_minutes = duration_value * 60
+            else:
+                duration_minutes = duration_value  # assume minutes
+            
+            # Extract calories and distance from WorkoutStatistics
+            calories = 0
+            distance_km = 0
+            
+            for stat in workout.findall('.//WorkoutStatistics'):
+                stat_type = stat.get('type', '')
+                sum_value = stat.get('sum')
+                unit = stat.get('unit', '')
+                
+                if sum_value:
+                    if 'ActiveEnergyBurned' in stat_type:
+                        calories = float(sum_value)
+                    elif 'DistanceWalkingRunning' in stat_type:
+                        if unit == 'km':
+                            distance_km = float(sum_value)
+                        elif unit == 'm':
+                            distance_km = float(sum_value) / 1000
+            
+            workouts.append({
+                'date': start_date.date(),
+                'start_time': start_date.time(),
+                'activity_type': activity_type.replace('HKWorkoutActivityType', ''),
+                'duration_minutes': round(duration_minutes, 1),
+                'duration_hours': round(duration_minutes / 60, 2),
+                'calories': round(calories, 1),
+                'distance_km': round(distance_km, 2),
+                'source': source_name
+            })
+                
+        except (ValueError, TypeError) as e:
+            continue
+    
+    if not workouts:
         print("No workout data found!")
         # Create an empty CSV file to indicate processing was attempted
-        pd.DataFrame(columns=['date', 'duration_hours', 'avg_heart_rate', 'measurements']).to_csv('workout_data.csv', index=False)
+        DataFrame(columns=['date', 'duration_hours', 'avg_heart_rate', 'measurements']).to_csv('workout_data.csv', index=False)
         print("Created empty workout_data.csv file.")
         return
         
-    # Convert to DataFrame with explicit data
-    workout_days = []
-    for day, data in daily_workouts.items():
-        estimated_minutes = data['measurement_count'] * (6/60)
-        avg_hr = sum(data['heart_rates']) / len(data['heart_rates']) if data['heart_rates'] else 0
-        
-        workout_days.append({
-            'date': day,
-            'duration_hours': estimated_minutes / 60,  # Convert to hours
-            'avg_heart_rate': round(avg_hr, 1),
-            'measurements': data['measurement_count']
-        })
-    
-    df = pd.DataFrame(workout_days)
+    df = DataFrame(workouts)
     df = df.sort_values('date')
     
     # Export to CSV with more descriptive column names
     export_df = df.copy()
     export_df['date'] = export_df['date'].astype(str)  # Convert date to string for better CSV compatibility
     export_df.to_csv('workout_data.csv', index=False)
-    print("\nWorkout data exported to 'workout_data.csv'")
-    print(f"Exported {len(export_df)} days of workout data")
+    print(f"\nWorkout data exported to 'workout_data.csv'")
+    print(f"Exported {len(export_df)} workouts")
     
     # Display first few rows of exported data
     print("\nFirst few rows of exported data:")
@@ -298,33 +444,41 @@ def analyze_workouts():
     
     # Plot
     plt.figure(figsize=(12, 6))
-    plt.scatter(df['date'], df['duration_hours'], alpha=0.5)
-    plt.plot(df['date'], df['duration_hours'], alpha=0.3)
-    plt.title('Daily Workout Duration')
+    plt.scatter(df['date'], df['duration_hours'], alpha=0.6, c=df.index, cmap='viridis')
+    plt.title('Workout Duration Over Time')
     plt.xlabel('Date')
-    plt.ylabel('Hours')
-    plt.grid(True)
+    plt.ylabel('Duration (Hours)')
+    plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
     
     # Print summary statistics
     print("\nWorkout Summary:")
-    print(f"Total days with workouts: {len(df)}")
-    print(f"Average daily workout time: {df['duration_hours'].mean():.2f} hours")
-    print(f"Total time recorded: {df['duration_hours'].sum():.2f} hours")
+    print(f"Total workouts: {len(df)}")
+    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
+    print(f"Average workout duration: {df['duration_minutes'].mean():.1f} minutes")
+    print(f"Total workout time: {df['duration_hours'].sum():.1f} hours")
+    print(f"Total calories burned: {df['calories'].sum():.0f} kcal")
+    print(f"Total distance: {df['distance_km'].sum():.1f} km")
     
-    if df['avg_heart_rate'].mean() > 0:
-        print(f"Average heart rate: {df['avg_heart_rate'].mean():.1f} BPM")
+    # Activity type breakdown
+    print(f"\nWorkout Types:")
+    activity_counts = df['activity_type'].value_counts()
+    for activity, count in activity_counts.head(10).items():
+        avg_duration = df[df['activity_type'] == activity]['duration_minutes'].mean()
+        print(f"  {activity}: {count} workouts (avg {avg_duration:.1f} min)")
     
-    print("\nRecent Days:")
+    print(f"\nRecent Workouts:")
     recent = df.sort_values('date', ascending=False).head(5)
-    for _, day in recent.iterrows():
-        print(f"\nDate: {day['date']}")
-        print(f"Duration: {day['duration_hours']:.2f} hours")
-        if day['avg_heart_rate'] > 0:
-            print(f"Average Heart Rate: {day['avg_heart_rate']:.1f} BPM")
-        print(f"Measurements: {day['measurements']}")
+    for _, workout in recent.iterrows():
+        print(f"\nDate: {workout['date']} at {workout['start_time']}")
+        print(f"Activity: {workout['activity_type']}")
+        print(f"Duration: {workout['duration_minutes']:.1f} minutes")
+        if workout['calories'] > 0:
+            print(f"Calories: {workout['calories']:.0f} kcal")
+        if workout['distance_km'] > 0:
+            print(f"Distance: {workout['distance_km']:.1f} km")
 
 def analyze_with_chatgpt(csv_files):
     """
@@ -401,7 +555,7 @@ def analyze_with_chatgpt(csv_files):
     for file_name, data_type in csv_files:
         try:
             if os.path.exists(file_name):
-                df = pd.read_csv(file_name)
+                df = read_csv(file_name)
                 
                 # Skip empty dataframes
                 if len(df) == 0:
@@ -562,7 +716,7 @@ def analyze_with_ollama(csv_files):
         for file_name, data_type in csv_files:
             try:
                 if os.path.exists(file_name):
-                    df = pd.read_csv(file_name)
+                    df = read_csv(file_name)
                     
                     # Skip empty dataframes
                     if len(df) == 0:
