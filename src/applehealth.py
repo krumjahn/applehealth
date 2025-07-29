@@ -121,8 +121,8 @@ def analyze_distance():
         print("Created empty distance_data.csv file.")
         return
     
-    # Daily sum of distance (in kilometers)
-    daily_distance = df.groupby(df['date'].dt.date)['value'].sum() / 1000
+    # Daily sum of distance (already in kilometers from Apple Health)
+    daily_distance = df.groupby(df['date'].dt.date)['value'].sum()
     
     # Export to CSV
     daily_distance.to_csv('distance_data.csv', header=True)
