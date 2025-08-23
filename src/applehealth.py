@@ -820,6 +820,308 @@ def analyze_with_ollama(csv_files):
     except Exception as e:
         print(f"Error during analysis: {str(e)}")
 
+def analyze_with_external_ollama(csv_files):
+    """
+    Analyze health data using an external Ollama LLM.
+    
+    Args:
+        csv_files: List of CSV files to analyze
+    """
+    try:
+        # Load environment variables
+        load_dotenv()
+        
+        # Get Ollama host from .env file or use default
+        default_host = "http://localhost:11434"
+        ollama_host = os.getenv('OLLAMA_HOST', default_host)
+        
+        # Ask user if they want to use a different Ollama host
+        print(f"\nUsing Ollama host: {ollama_host}")
+        use_custom_host = input(f"Use a different Ollama host? (y/n): ").strip().lower()
+        if use_custom_host == 'y' or use_custom_host == 'yes':
+            custom_host = input("Enter the Ollama host (e.g., http://example.com:11434): ").strip()
+            if custom_host:
+                ollama_host = custom_host
+                print(f"Using custom Ollama host: {ollama_host}")
+        
+        # Check if required data files exist and run analyses if needed
+        missing_files = []
+        for file_name, data_type in csv_files:
+            if not os.path.exists(file_name):
+                missing_files.append((file_name, data_type))
+        
+        if missing_files:
+            print("\nSome required data files are missing. Running analyses to generate them...")
+            print("Note: This will generate all required data files without displaying plots.")
+            print("You can view the plots later by running options 1-6 individually.")
+            
+            # Temporarily disable plot display to avoid blocking
+            original_show = plt.show
+            plt.show = lambda: None  # Replace with no-op function
+            
+            try:
+                # Map file names to their corresponding analysis functions
+                analysis_functions = {
+                    'steps_data.csv': analyze_steps,
+                    'distance_data.csv': analyze_distance,
+                    'heart_rate_data.csv': analyze_heart_rate,
+                    'weight_data.csv': analyze_weight,
+                    'sleep_data.csv': analyze_sleep,
+                    'workout_data.csv': analyze_workouts
+                }
+                
+                # Run the necessary analyses
+                for file_name, data_type in missing_files:
+                    if file_name in analysis_functions:
+                        print(f"\nGenerating {file_name} from {data_type} data...")
+                        analysis_functions[file_name]()
+                        # Verify the file was created
+                        if os.path.exists(file_name):
+                            print(f"✓ Successfully generated {file_name}")
+                        else:
+                            print(f"✗ Failed to generate {file_name}")
+            finally:
+                # Restore original plt.show function
+                plt.show = original_show
+        
+        # Add data preparation code
+        data_summary = {}
+        files_found = False
+        
+        print("\nProcessing data files...")
+        for file_name, data_type in csv_files:
+            try:
+                if os.path.exists(file_name):
+                    df = read_csv(file_name)
+                    
+                    # Skip empty dataframes
+                    if len(df) == 0:
+                        print(f"Note: {file_name} exists but contains no data.")
+                        continue
+                    
+                    print(f"Found {data_type} data in {file_name}")
+                    
+                    data_summary[data_type] = {
+                        'total_records': len(df),
+                        'date_range': f"from {df['date'].min()} to {df['date'].max()}" if 'date' in df and len(df) > 0 else 'N/A',
+                        'average': f"{df['value'].mean():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                        'max_value': f"{df['value'].max():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                        'min_value': f"{df['value'].min():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                        'data_sample': df.head(50).to_string() if len(df) > 0 else 'No data available'
+                    }
+                    files_found = True
+                else:
+                    print(f"Warning: {file_name} still not found after attempted generation.")
+                    
+            except Exception as e:
+                print(f"Error processing {file_name}: {str(e)}")
+                continue
+
+        if not files_found:
+            print("\nNo data files with content could be processed! Please check your export.xml file.")
+            print("It appears your Apple Health export doesn't contain the expected health metrics.")
+            return
+
+        # Build the prompt
+        user_prompt = "Analyze this Apple Health data and provide detailed insights:\n\n"
+        for data_type, summary in data_summary.items():
+            user_prompt += f"\n{data_type} Data Summary:\n"
+            user_prompt += f"- Total Records: {summary['total_records']}\n"
+            user_prompt += f"- Date Range: {summary['date_range']}\n"
+            user_prompt += f"- Average Value: {summary['average']}\n"
+            user_prompt += f"- Maximum Value: {summary['max_value']}\n"
+            user_prompt += f"- Minimum Value: {summary['min_value']}\n"
+            user_prompt += f"\nSample Data:\n{summary['data_sample']}\n"
+            user_prompt += "\n" + "="*50 + "\n"
+
+        user_prompt += """Please provide a comprehensive analysis including:
+        1. Notable patterns or trends in the data
+        2. Unusual findings or correlations between different metrics
+        3. Actionable health insights based on the data
+        4. Areas that might need attention or improvement
+        """
+
+        # Connect to external Ollama API server
+        print("\nConnecting to Ollama server...")
+        
+        # Messages to send to the model
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."
+            }, 
+            {
+                "role": "user", 
+                "content": user_prompt
+            }
+        ]
+        
+        # Options for the model
+        options = {
+            "temperature": 0.3,
+            "num_ctx": 6144
+        }
+        
+        # Set up Ollama client with the specified host
+        try:
+            # Import the Client class from ollama
+            from ollama import Client
+            
+            # Create an Ollama client with the specified host
+            print(f"Creating Ollama client with host: {ollama_host}")
+            client = Client(host=ollama_host)
+            
+            # Test connectivity and list available models
+            try:
+                print("Testing connectivity and listing available models...")
+                models_list = client.list()
+                print("Successfully connected to Ollama server!")
+                
+                # Extract and display available models
+                model_names = [model.get("name") for model in models_list.get("models", [])]
+                if model_names:
+                    print(f"Available models: {', '.join(model_names)}")
+                    
+                    # Try to find a deepseek model
+                    deepseek_models = [m for m in model_names if 'deepseek' in m]
+                    if deepseek_models:
+                        model_name = deepseek_models[0]
+                        print(f"Selected deepseek model: {model_name}")
+                    else:
+                        # Otherwise use the first available model
+                        model_name = model_names[0]
+                        print(f"No deepseek model found. Using: {model_name}")
+                else:
+                    print("No models found on the server. Using default 'deepseek-r1:7b'")
+                    model_name = "deepseek-r1:7b"
+            except Exception as e:
+                print(f"Error listing models: {e}")
+                print("Using default model 'deepseek-r1:7b'")
+                model_name = "deepseek-r1:7b"
+
+            # Prepare messages for the chat API
+            messages = [{
+                "role": "system",
+                "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."
+            }, {
+                "role": "user", 
+                "content": user_prompt
+            }]
+            
+            # Set options for the model
+            options = {
+                'temperature': 0.3,
+                'num_ctx': 6144
+            }
+            
+            # Send the request to the Ollama server
+            print(f"\nSending data to {model_name} via Ollama...")
+            try:
+                # Try using chat first
+                response = client.chat(
+                    model=model_name,
+                    messages=messages,
+                    options=options
+                )
+                analysis_content = response['message']['content']
+                print("Successfully received chat response!")
+            except Exception as chat_error:
+                print(f"Chat request failed: {chat_error}")
+                print("Trying generate endpoint instead...")
+                
+                # Fall back to generate endpoint if chat fails
+                try:
+                    system_message = messages[0]["content"]
+                    user_message = messages[1]["content"]
+                    combined_prompt = f"{system_message}\n\n{user_message}"
+                    
+                    response = client.generate(
+                        model=model_name,
+                        prompt=combined_prompt,
+                        options=options
+                    )
+                    analysis_content = response['response']
+                    print("Successfully received generate response!")
+                except Exception as generate_error:
+                    print(f"Generate request also failed: {generate_error}")
+                    raise Exception("All Ollama API requests failed")
+        except ImportError:
+            print("Error: Could not import Client from ollama. Make sure you have the latest version.")
+            print("Try: pip install --upgrade ollama")
+            raise Exception("Failed to import Ollama Client class")
+        except Exception as e:
+            print(f"Error communicating with Ollama server at {ollama_host}: {e}")
+            
+            # Check if we should try local Ollama
+            use_local = input("\nExternal Ollama server connection failed. Try default local Ollama instance? (y/n): ").strip().lower()
+            if use_local == 'y' or use_local == 'yes':
+                try:
+                    print("Falling back to local Ollama instance...")
+                    # Create local client without host parameter
+                    local_client = Client()
+                    # Create new messages array since we didn't define it in this branch
+                    local_messages = [{
+                        "role": "system",
+                        "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."
+                    }, {
+                        "role": "user", 
+                        "content": user_prompt
+                    }]
+                    
+                    response = local_client.chat(
+                        model='deepseek-r1',
+                        messages=local_messages,
+                        options=options
+                    )
+                    analysis_content = response['message']['content']
+                    print("Successfully received response from local Ollama!")
+                except Exception as local_error:
+                    print(f"Error with local Ollama: {local_error}")
+                    print("\nTo use Ollama, you need to either:")
+                    print("1. Install and run Ollama locally (https://ollama.com/download)")
+                    print("2. Provide a correct external Ollama host")
+                    raise Exception("Unable to connect to any Ollama instance")
+            else:
+                raise Exception("User opted not to use local Ollama")
+
+        analysis_content = response['message']['content']
+        
+        print("\nDeepseek-R1 Analysis:")
+        print("=" * 50)
+        print(analysis_content)
+        
+        # Ask if user wants to save the analysis
+        save_option = input("\nWould you like to save this analysis as a markdown file? (y/n): ").strip().lower()
+        if save_option == 'y' or save_option == 'yes':
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"health_analysis_ollama_{timestamp}.md"
+            
+            # Create markdown content
+            markdown_content = f"# Apple Health Data Analysis (Ollama Deepseek-R1)\n\n"
+            markdown_content += f"*Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
+            markdown_content += f"## Data Summary\n\n"
+            
+            for data_type, summary in data_summary.items():
+                markdown_content += f"### {data_type}\n\n"
+                markdown_content += f"- **Total Records:** {summary['total_records']}\n"
+                markdown_content += f"- **Date Range:** {summary['date_range']}\n"
+                markdown_content += f"- **Average Value:** {summary['average']}\n"
+                markdown_content += f"- **Maximum Value:** {summary['max_value']}\n"
+                markdown_content += f"- **Minimum Value:** {summary['min_value']}\n\n"
+            
+            markdown_content += f"## Analysis Results\n\n"
+            markdown_content += analysis_content
+            
+            # Save to file
+            filepath = os.path.join(os.path.dirname(__file__), filename)
+            with open(filepath, 'w') as f:
+                f.write(markdown_content)
+            
+            print(f"\nAnalysis saved to {filepath}")
+
+    except Exception as e:
+        print(f"Error during analysis: {str(e)}")
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -834,8 +1136,9 @@ def main():
         print("6. Workouts")
         print("7. Analyze All Data with ChatGPT")
         print("8. Analyze with Local LLM (Ollama)")
-        print("9. Advanced AI Settings")
-        print("10. Exit")
+        print("9. Analyze with External LLM (Ollama)")
+        print("10. Advanced AI Settings")
+        print("11. Exit")
         
         choice = input("Enter your choice (1-10): ")
         
@@ -866,6 +1169,8 @@ def main():
         elif choice == '8':
             analyze_with_ollama(data_files)
         elif choice == '9':
+            analyze_with_external_ollama(data_files)
+        elif choice == '10':
             print("\nAdvanced AI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -875,7 +1180,7 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '10':
+        elif choice == '11':
             print("Goodbye!")
             break
         else:

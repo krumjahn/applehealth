@@ -15,7 +15,8 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - ⚖️ Weight tracking over time
 - 😴 Sleep pattern analysis
 - 🔄 WHOOP workout integration
-- 🧠 **Local LLM Support** (New!) - Analyze data privately using Ollama models like Deepseek-R1
+- 🧠 **Local LLM Support** - Analyze data privately using Ollama models like Deepseek-R1
+- 🌐 **External LLM Support** (New!) - Connect to remote Ollama instances for analysis
 
 ## Example A.I. analysis
 
@@ -33,6 +34,7 @@ Workout Evolution: Your exercise patterns have notably changed over the years - 
 Seasonal Anomalies: While there's a general trend of higher activity in spring/summer, some of your most active periods occurred during winter months, particularly in December and January of recent years.
 
 Heart Rate Cycles: Your data shows interesting 3-4 week cycles where resting heart rate gradually increases then drops, possibly indicating training load and recovery patterns.
+
 COVID Impact: There's a clear signature of the pandemic in your data, with more erratic step patterns and changed workout routines during 2020-2021, followed by a distinct recovery pattern in late 2021.
 
 Morning Consistency: Your most successful workout periods consistently occur in morning hours, with these sessions showing better heart rate performance compared to other times.
@@ -68,14 +70,17 @@ Morning Consistency: Your most successful workout periods consistently occur in 
    pip install -r requirements.txt
    ```
 
-3. Set up OpenAI API key:
-   - Get your API key from [OpenAI Platform](https://platform.openai.com/)
-   - Create a `.env` file in the project directory
-   - Add your API key:
+3. Set up OpenAI API key and optional Ollama configuration:
+   - Get your OpenAI API key from [OpenAI Platform](https://platform.openai.com/)
+   - Copy `.env.example` to `.env` in the project directory
+   - Add your OpenAI API key and optional configuration:
 
      ```
      OPENAI_API_KEY=your-api-key-here
+     OLLAMA_HOST=http://your-ollama-server:11434
      ```
+
+   Note: If OLLAMA_HOST is not set, it will default to http://localhost:11434
 
 4. **Set up Ollama for local AI analysis**:
    - Install Ollama: <https://ollama.ai/download>
@@ -134,8 +139,9 @@ Choose from the menu:
 6. Workout Analysis
 7. Analyze All Data with ChatGPT
 8. Analyze with Local LLM (Ollama)
-9. Advanced AI Settings
-10. Exit
+9. Analyze with External LLM (Ollama)
+10. Advanced AI Settings
+11. Exit
 
 ### 🤖 AI Analysis
 
@@ -151,16 +157,26 @@ Note: You must run at least one other analysis option first to generate the data
 
 ### 🖥️ Local LLM Analysis
 
-The new local analysis feature (Option 8) will:
+The local analysis feature (Option 8) will:
 
 - Process data entirely on your machine
 - Use Ollama with Deepseek-R1 by default
 - Provide technical analysis of health patterns
 - No data leaves your computer
 
+### 🌐 External LLM Analysis
+
+The external LLM analysis feature (Option 9) will:
+
+- Connect to a remote Ollama instance
+- Default to a preconfigured remote server
+- Allow customization of the server URL
+- Automatically detect available models
+- Fall back to local Ollama if remote connection fails
+
 **To use different models**:
 
-1. Edit `applehealth.py` and find the `analyze_with_ollama()` function
+1. For local analysis, edit `applehealth.py` and find the `analyze_with_ollama()` function
 2. Change the model name in this line:
 
    ```python
@@ -172,6 +188,8 @@ The new local analysis feature (Option 8) will:
    ```bash
    ollama pull <model-name>
    ```
+   
+4. For external analysis, when prompted, enter the URL of your remote Ollama server
 
 ## 📊 Example Output
 
@@ -213,6 +231,7 @@ This tool processes your health data locally on your machine. When using the AI 
 - AI analysis requires OpenAI API key and internet connection
 - Local LLM analysis requires minimum 8GB RAM for decent performance
 - Model quality depends on local hardware capabilities
+- External LLM connectivity depends on network and server availability
 
 ## 🔜 Roadmap
 
@@ -223,6 +242,8 @@ This tool processes your health data locally on your machine. When using the AI 
 - [ ] Configuration options
 - [ ] Add model selection UI
 - [ ] Support multiple local LLM providers
+- [x] Support external Ollama LLM instances
+- [ ] Add authentication for secure remote LLM connections
 
 ## 📄 License
 
@@ -233,11 +254,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Apple Health for providing comprehensive health data export
 - WHOOP for workout tracking capabilities
 - OpenAI for ChatGPT API
+- Ollama team for local and distributed LLM capabilities
 - Contributors and users of this tool
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=krumjahn/applehealth&type=Date)](https://star-history.com/#krumjahn/applehealth&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=nicolasluckie/applehealth&type=Date)](https://star-history.com/#nicolasluckie/applehealth&Date)
 
 ---
 
