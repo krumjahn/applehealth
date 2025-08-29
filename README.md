@@ -259,8 +259,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=nicolasluckie/applehealth&type=Date)](https://star-history.com/#nicolasluckie/applehealth&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=krumjahn/applehealth&type=Date)](https://star-history.com/#krumjahn/applehealth&Date)
 
 ---
 
 If you find this tool useful, please consider giving it a star ⭐️
+
