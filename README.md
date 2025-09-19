@@ -30,8 +30,11 @@ cd applehealth
 # 2) Install dependencies
 pip install -r requirements.txt
 
-# 3) Run the app (you will be prompted for export.xml if omitted)
-python src/applehealth.py --export "/absolute/path/to/export.xml" --out "./health_out"
+# 3) Run the app (you'll be prompted for export.xml; outputs go to ./health_out)
+python src/applehealth.py
+
+# Optional: Advanced flags if you already know the paths
+# python src/applehealth.py --export "/absolute/path/to/export.xml" --out "./health_out"
 ```
 
 Docker (saves charts/CSVs to your host folder)
@@ -180,18 +183,21 @@ You can run the tool locally (recommended for interactive charts) or via Docker 
 Local (interactive charts):
 
 ```bash
-# From the repository root:
-python src/applehealth.py --export "/path/to/export.xml" --out "./health_out"
+# From the repository root (simplest):
+python src/applehealth.py
 
 # or change into src/ then run
 cd src
-python applehealth.py --export "/path/to/export.xml" --out "../health_out"
+python applehealth.py
+
+# Optional: if you already know the paths, you can specify them
+# python src/applehealth.py --export "/path/to/export.xml" --out "./health_out"
 ```
 
 Notes:
-- If you omit `--export`, the app will prompt you to provide the path to `export.xml` after it starts.
-- `--out` controls where CSV/PNG/MD files are written. If omitted, files are saved to the current directory.
-- On Windows, use quotes for paths with spaces, e.g. `"C:\\Users\\you\\Downloads\\export.xml"`.
+- If you omit `--export`, the app will prompt you for the path (you can drag-and-drop the file or folder).
+- By default, outputs are saved to `./health_out`.
+- `--out` lets you choose a different output folder.
 
 ## 🐳 Docker Usage
 
