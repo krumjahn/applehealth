@@ -40,6 +40,14 @@ from dotenv import load_dotenv
 import sys
 import ollama
 import argparse
+try:
+    import anthropic  # Claude SDK
+except Exception:
+    anthropic = None
+try:
+    import google.generativeai as genai  # Gemini SDK
+except Exception:
+    genai = None
 
 # Optional user-provided path to export.xml (from CLI or prompt)
 _export_xml_path = None
@@ -817,24 +825,17 @@ def analyze_with_chatgpt(csv_files):
     Args:
         csv_files: List of CSV files to analyze
     """
-    # Check if .env file exists and load API key
-    if not os.path.exists('.env'):
-        print("\nError: .env file not found!")
-        print("Please create a .env file with your OpenAI API key:")
-        print("OPENAI_API_KEY=your-api-key-here")
-        return
-    
-    # Load environment variables
+    # Load environment variables if present and prompt for key if missing
     load_dotenv()
-    
-    # Check if API key is set
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        print("\nError: OPENAI_API_KEY not found in .env file!")
-        print("Please add your OpenAI API key to the .env file.")
-        return
-    
-    # Set API key
+        print("\nOpenAI API key not found in environment.")
+        entered = input("Paste your OpenAI API key (sk-...): ").strip()
+        if not entered:
+            print("Skipping ChatGPT analysis: no API key provided.")
+            return
+        api_key = entered
+        os.environ['OPENAI_API_KEY'] = api_key
     openai.api_key = api_key
     
     # Check if required data files exist and run analyses if needed
@@ -1461,6 +1462,203 @@ def analyze_with_external_ollama(csv_files):
     except Exception as e:
         print(f"Error during analysis: {str(e)}")
 
+def _get_or_prompt_key(env_name: str, label: str) -> str:
+    """Return API key from env or prompt the user to paste it."""
+    load_dotenv()
+    key = os.getenv(env_name)
+    if key:
+        return key
+    print(f"\n{label} API key not found.")
+    key = input(f"Paste your {label} API key: ").strip()
+    if not key:
+        print(f"Skipping {label} analysis: no API key provided.")
+        return None
+    os.environ[env_name] = key
+    return key
+
+def _prepare_ai_data(csv_files):
+    """Generate missing CSVs if needed and build a shared prompt."""
+    missing_files = []
+    for file_name, data_type in csv_files:
+        if not os.path.exists(get_output_path(file_name)):
+            missing_files.append((file_name, data_type))
+
+    if missing_files:
+        print("\nSome required data files are missing. Running analyses to generate them...")
+        original_show = plt.show
+        plt.show = lambda: None
+        try:
+            analysis_functions = {
+                'steps_data.csv': analyze_steps,
+                'distance_data.csv': analyze_distance,
+                'heart_rate_data.csv': analyze_heart_rate,
+                'weight_data.csv': analyze_weight,
+                'sleep_data.csv': analyze_sleep,
+                'workout_data.csv': analyze_workouts
+            }
+            for file_name, data_type in missing_files:
+                if file_name in analysis_functions:
+                    print(f"Generating {file_name} from {data_type} data...")
+                    analysis_functions[file_name]()
+        finally:
+            plt.show = original_show
+
+    data_summary = {}
+    files_found = False
+    print("\nProcessing data files for AI analysis...")
+    for file_name, data_type in csv_files:
+        path = get_output_path(file_name)
+        try:
+            if os.path.exists(path):
+                df = read_csv(path)
+                if len(df) == 0:
+                    print(f"Note: {path} exists but contains no data.")
+                    continue
+                print(f"Found {data_type} data in {path}")
+                data_summary[data_type] = {
+                    'total_records': len(df),
+                    'date_range': f"from {df['date'].min()} to {df['date'].max()}" if 'date' in df and len(df) > 0 else 'N/A',
+                    'average': f"{df['value'].mean():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                    'max_value': f"{df['value'].max():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                    'min_value': f"{df['value'].min():.2f}" if 'value' in df and len(df) > 0 else 'N/A',
+                    'data_sample': df.head(50).to_string() if len(df) > 0 else 'No data available'
+                }
+                files_found = True
+        except Exception as e:
+            print(f"Error processing {path}: {e}")
+            continue
+
+    if not files_found:
+        print("\nNo data files with content could be processed! Please check your export.xml file.")
+        return None, None
+
+    prompt = "Analyze this Apple Health data and provide detailed insights:\n\n"
+    for data_type, summary in data_summary.items():
+        prompt += f"\n{data_type} Data Summary:\n"
+        prompt += f"- Total Records: {summary['total_records']}\n"
+        prompt += f"- Date Range: {summary['date_range']}\n"
+        prompt += f"- Average Value: {summary['average']}\n"
+        prompt += f"- Maximum Value: {summary['max_value']}\n"
+        prompt += f"- Minimum Value: {summary['min_value']}\n"
+        prompt += f"\nSample Data:\n{summary['data_sample']}\n"
+        prompt += "\n" + "="*50 + "\n"
+
+    prompt += (
+        "Please provide a comprehensive analysis including:\n"
+        "1. Notable patterns or trends in the data\n"
+        "2. Unusual findings or correlations between different metrics\n"
+        "3. Actionable health insights based on the data\n"
+        "4. Areas that might need attention or improvement\n"
+    )
+
+    return data_summary, prompt
+
+def _prompt_and_save_analysis(analysis_content: str, provider_label: str, filename_prefix: str):
+    print(f"\n{provider_label} Analysis:")
+    print("=" * 50)
+    print(analysis_content)
+    save_option = input("\nSave this analysis as a markdown file? (y/n): ").strip().lower()
+    if save_option in ('y', 'yes'):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{filename_prefix}_{timestamp}.md"
+        filepath = get_output_path(filename)
+        with open(filepath, 'w') as f:
+            f.write(f"# Apple Health Data Analysis ({provider_label})\n\n")
+            f.write(f"*Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
+            f.write(analysis_content)
+        print(f"Saved to {filepath}")
+
+def analyze_with_claude(csv_files):
+    key = _get_or_prompt_key('ANTHROPIC_API_KEY', 'Anthropic (Claude)')
+    if not key:
+        return
+    if anthropic is None:
+        print("anthropic package not installed. Run: pip install anthropic")
+        return
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+    try:
+        client = anthropic.Anthropic(api_key=key)
+        resp = client.messages.create(
+            model="claude-3-5-sonnet-latest",
+            max_tokens=2000,
+            temperature=0.3,
+            system="You are a health data analyst with strong technical skills.",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        content = "".join([getattr(b, 'text', '') for b in resp.content])
+        _prompt_and_save_analysis(content, 'Claude', 'health_analysis_claude')
+    except Exception as e:
+        print(f"Error during Claude analysis: {e}")
+
+def analyze_with_gemini(csv_files):
+    key = _get_or_prompt_key('GEMINI_API_KEY', 'Google Gemini')
+    if not key:
+        return
+    if genai is None:
+        print("google-generativeai package not installed. Run: pip install google-generativeai")
+        return
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+    try:
+        genai.configure(api_key=key)
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        resp = model.generate_content(prompt)
+        content = getattr(resp, 'text', None)
+        if not content and getattr(resp, 'candidates', None):
+            content = resp.candidates[0].content.parts[0].text
+        _prompt_and_save_analysis(content or '', 'Gemini', 'health_analysis_gemini')
+    except Exception as e:
+        print(f"Error during Gemini analysis: {e}")
+
+def analyze_with_grok(csv_files):
+    key = _get_or_prompt_key('GROK_API_KEY', 'xAI Grok')
+    if not key:
+        return
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+    try:
+        client = openai.OpenAI(api_key=key, base_url="https://api.x.ai/v1")
+        response = client.chat.completions.create(
+            model="grok-beta",
+            messages=[
+                {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=2000
+        )
+        content = response.choices[0].message.content
+        _prompt_and_save_analysis(content, 'Grok', 'health_analysis_grok')
+    except Exception as e:
+        print(f"Error during Grok analysis: {e}")
+
+def analyze_with_openrouter(csv_files):
+    key = _get_or_prompt_key('OPENROUTER_API_KEY', 'OpenRouter')
+    if not key:
+        return
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+    try:
+        client = openai.OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
+        response = client.chat.completions.create(
+            model="openrouter/auto",
+            messages=[
+                {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=2000
+        )
+        content = response.choices[0].message.content
+        _prompt_and_save_analysis(content, 'OpenRouter', 'health_analysis_openrouter')
+    except Exception as e:
+        print(f"Error during OpenRouter analysis: {e}")
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -1478,8 +1676,12 @@ def main():
         print("9. Analyze with External LLM (Ollama)")
         print("10. Advanced AI Settings")
         print("11. Exit")
+        print("12. Analyze with Claude (Anthropic)")
+        print("13. Analyze with Gemini (Google)")
+        print("14. Analyze with Grok (xAI)")
+        print("15. Analyze with OpenRouter")
         
-        choice = input("Enter your choice (1-11): ")
+        choice = input("Enter your choice (1-15): ")
         
         # List of available data files and their types
         data_files = [
@@ -1492,7 +1694,7 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'1','2','3','4','5','6','7','8','9'}:
+        if choice in {'1','2','3','4','5','6','7','8','9','12','13','14','15'}:
             if not ensure_export_available():
                 continue
 
@@ -1514,6 +1716,14 @@ def main():
             analyze_with_ollama(data_files)
         elif choice == '9':
             analyze_with_external_ollama(data_files)
+        elif choice == '12':
+            analyze_with_claude(data_files)
+        elif choice == '13':
+            analyze_with_gemini(data_files)
+        elif choice == '14':
+            analyze_with_grok(data_files)
+        elif choice == '15':
+            analyze_with_openrouter(data_files)
         elif choice == '10':
             print("\nAdvanced AI Settings:")
             print("Current default temperature: 0.3")

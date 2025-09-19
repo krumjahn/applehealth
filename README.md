@@ -117,7 +117,7 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 - Python 3.6+
 - pandas
 - matplotlib
-- openai
+- openai, anthropic, google-generativeai
 - python-dotenv
 - xml.etree.ElementTree (included in Python standard library)
 
@@ -259,7 +259,13 @@ The new AI analysis feature (Option 7) will:
 
 Notes:
 - If you haven’t run any analysis yet, the AI options will trigger the necessary data exports automatically.
-- For ChatGPT, create a `.env` with `OPENAI_API_KEY=...` in the working directory (or pass `--env-file .env` to Docker).
+- API keys can be provided via `.env` or pasted when prompted in the terminal:
+  - ChatGPT (OpenAI): `OPENAI_API_KEY`
+  - Claude (Anthropic): `ANTHROPIC_API_KEY`
+  - Gemini (Google): `GEMINI_API_KEY`
+  - Grok (xAI): `GROK_API_KEY`
+  - OpenRouter: `OPENROUTER_API_KEY`
+  If not present, the app will ask you to paste your key at runtime.
 
 ### 🖥️ Local LLM Analysis
 
