@@ -312,6 +312,10 @@ The tool writes the following per-metric outputs in the chosen output directory:
 
 On macOS/Linux, the app prints a one-line tip to open each saved plot (e.g., `open "./steps_plot.png"`).
 
+AI model preferences
+- The tool remembers your last-selected models for each AI provider (OpenAI, Claude, Gemini, Grok, OpenRouter).
+- Preferences are stored in `ai_prefs.json` in your chosen output directory.
+
 ## 🆘 Troubleshooting
 
 - "export.xml not found" error:

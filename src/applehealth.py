@@ -40,6 +40,7 @@ from dotenv import load_dotenv
 import sys
 import ollama
 import argparse
+import json
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -86,6 +87,36 @@ def print_open_hint(file_path: str):
             print(f"Tip: open this file in your viewer: {file_path}")
     except Exception:
         pass
+
+# Simple persisted preferences for AI models, stored in OUTPUT_DIR
+def _prefs_path() -> str:
+    return get_output_path('ai_prefs.json')
+
+def _load_ai_prefs() -> dict:
+    try:
+        path = _prefs_path()
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+def _save_ai_prefs(prefs: dict):
+    try:
+        with open(_prefs_path(), 'w') as f:
+            json.dump(prefs, f, indent=2)
+    except Exception:
+        pass
+
+def _get_saved_model(provider_key: str, default_model: str) -> str:
+    prefs = _load_ai_prefs()
+    return prefs.get(provider_key, default_model)
+
+def _set_saved_model(provider_key: str, model: str):
+    prefs = _load_ai_prefs()
+    prefs[provider_key] = model
+    _save_ai_prefs(prefs)
 
 def resolve_export_xml():
     """Locate the Apple Health export.xml across common locations.
@@ -940,7 +971,7 @@ def analyze_with_chatgpt(csv_files):
 
     try:
         # Send to OpenAI API using the new client syntax (v1.0.0+)
-        model_name = _prompt_model_name("gpt-4", "OpenAI (ChatGPT)", "gpt-4o, gpt-4o-mini, gpt-4-turbo")
+        model_name = _prompt_model_name("openai_model", "gpt-4", "OpenAI (ChatGPT)", "gpt-4o, gpt-4o-mini, gpt-4-turbo")
         print(f"\nSending data to ChatGPT for analysis using model: {model_name}...")
         client = openai.OpenAI(api_key=api_key)
         response = client.chat.completions.create(
@@ -1569,12 +1600,15 @@ def _prompt_and_save_analysis(analysis_content: str, provider_label: str, filena
             f.write(analysis_content)
         print(f"Saved to {filepath}")
 
-def _prompt_model_name(default_model: str, provider_label: str, examples: str = "") -> str:
-    """Prompt user to optionally override the model name for a provider."""
+def _prompt_model_name(provider_key: str, default_model: str, provider_label: str, examples: str = "") -> str:
+    """Prompt user to optionally override the model name for a provider and remember it."""
     try:
+        remembered = _get_saved_model(provider_key, default_model)
         hint = f" (e.g., {examples})" if examples else ""
-        entered = input(f"\nModel for {provider_label} [{default_model}]{hint}: ").strip()
-        return entered or default_model
+        entered = input(f"\nModel for {provider_label} [{remembered}]{hint}: ").strip()
+        chosen = entered or remembered
+        _set_saved_model(provider_key, chosen)
+        return chosen
     except Exception:
         return default_model
 
@@ -1589,7 +1623,7 @@ def analyze_with_claude(csv_files):
     if prompt is None:
         return
     try:
-        model_name = _prompt_model_name("claude-3-5-sonnet-latest", "Claude", "claude-3-5-sonnet-latest, claude-3-opus-latest")
+        model_name = _prompt_model_name("claude_model", "claude-3-5-sonnet-latest", "Claude", "claude-3-5-sonnet-latest, claude-3-opus-latest")
         client = anthropic.Anthropic(api_key=key)
         resp = client.messages.create(
             model=model_name,
@@ -1615,7 +1649,7 @@ def analyze_with_gemini(csv_files):
         return
     try:
         genai.configure(api_key=key)
-        model_name = _prompt_model_name('gemini-1.5-pro', 'Gemini', 'gemini-1.5-pro, gemini-1.5-flash')
+        model_name = _prompt_model_name('gemini_model', 'gemini-1.5-pro', 'Gemini', 'gemini-1.5-pro, gemini-1.5-flash')
         model = genai.GenerativeModel(model_name)
         resp = model.generate_content(prompt)
         content = getattr(resp, 'text', None)
@@ -1633,7 +1667,7 @@ def analyze_with_grok(csv_files):
     if prompt is None:
         return
     try:
-        model_name = _prompt_model_name("grok-beta", "Grok (xAI)")
+        model_name = _prompt_model_name("grok_model", "grok-beta", "Grok (xAI)")
         client = openai.OpenAI(api_key=key, base_url="https://api.x.ai/v1")
         response = client.chat.completions.create(
             model=model_name,
@@ -1657,7 +1691,7 @@ def analyze_with_openrouter(csv_files):
     if prompt is None:
         return
     try:
-        model_name = _prompt_model_name("openrouter/auto", "OpenRouter", "openrouter/auto, meta-llama/llama-3.1-8b-instruct:free")
+        model_name = _prompt_model_name("openrouter_model", "openrouter/auto", "OpenRouter", "openrouter/auto, meta-llama/llama-3.1-8b-instruct:free")
         client = openai.OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
         response = client.chat.completions.create(
             model=model_name,
