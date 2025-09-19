@@ -40,9 +40,12 @@ from dotenv import load_dotenv
 import sys
 import ollama
 import argparse
+import threading
+import time
+from contextlib import contextmanager
 import json
 from urllib.parse import unquote as _url_unquote
-from typing import Optional
+from typing import Optional, List
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -152,6 +155,70 @@ def _set_saved_pref(key: str, value: str):
     prefs = _load_ai_prefs()
     prefs[key] = value
     _save_ai_prefs(prefs)
+
+def _parse_bool_env(name: str, default: bool) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    val = val.strip().lower()
+    return val in ("1", "true", "yes", "y", "on")
+
+def _parse_csv_env(name: str) -> List[str]:
+    val = os.environ.get(name)
+    if not val:
+        return []
+    return [x.strip() for x in val.split(',') if x.strip()]
+
+# --- Simple CLI progress helpers ---
+_spinner_symbols = ['⠋', '⠙', '⠚', '⠞', '⠖', '⠦', '⠴', '⠲', '⠳', '⠓']
+
+class _Spinner:
+    def __init__(self, message: str = "Working", interval: float = 0.1):
+        self.message = message
+        self.interval = interval
+        self._stop = threading.Event()
+        self._thread = None
+        self._start_time = None
+
+    def start(self):
+        if self._thread is not None:
+            return
+        self._start_time = time.time()
+        def run():
+            i = 0
+            while not self._stop.is_set():
+                elapsed = int(time.time() - self._start_time)
+                sym = _spinner_symbols[i % len(_spinner_symbols)]
+                print(f"\r{self.message} {sym}  {elapsed}s elapsed", end='', flush=True)
+                i += 1
+                time.sleep(self.interval)
+            # Clear line on stop
+            print("\r" + " " * 80 + "\r", end='', flush=True)
+        self._thread = threading.Thread(target=run, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        if self._thread is None:
+            return
+        self._stop.set()
+        self._thread.join(timeout=1.0)
+        self._thread = None
+
+@contextmanager
+def spinner(message: str):
+    s = _Spinner(message)
+    try:
+        s.start()
+        yield
+    finally:
+        s.stop()
+
+def _status(msg: str):
+    try:
+        ts = time.strftime('%H:%M:%S')
+        print(f"[{ts}] {msg}")
+    except Exception:
+        print(msg)
 
 def reset_preferences():
     """Delete saved preferences file and clear in-memory overrides."""
@@ -1067,61 +1134,62 @@ def analyze_with_chatgpt(csv_files):
     """
 
     try:
-        # Send to OpenAI API using the new client syntax (v1.0.0+)
-        model_name = _prompt_model_name("openai_model", "gpt-4", "OpenAI (ChatGPT)", "gpt-4o, gpt-4o-mini, gpt-4-turbo")
-        print(f"\nSending data to ChatGPT for analysis using model: {model_name}...")
-        client = openai.OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=2000
-        )
+        # Send to OpenAI API with timeout and streaming
+        model_name = _prompt_model_name("openai_model", "gpt-4o", "OpenAI (ChatGPT)", "gpt-4o, gpt-4o-mini, gpt-4-turbo")
+        _status(f"Using OpenAI model: {model_name}")
+        client = openai.OpenAI(api_key=api_key, timeout=60.0, max_retries=1)
 
-        analysis_content = response.choices[0].message.content
-        
-        print("\nChatGPT Analysis:")
-        print("=" * 50)
-        print(analysis_content)
-        
-        # Ask if user wants to save the analysis
-        save_option = input("\nWould you like to save this analysis as a markdown file? (y/n): ").strip().lower()
-        if save_option == 'y' or save_option == 'yes':
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"health_analysis_chatgpt_{timestamp}.md"
-            
-            # Create markdown content
-            markdown_content = f"# Apple Health Data Analysis (ChatGPT)\n\n"
-            markdown_content += f"*Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
-            markdown_content += f"## Data Summary\n\n"
-            
-            for data_type, summary in data_summary.items():
-                markdown_content += f"### {data_type}\n\n"
-                markdown_content += f"- **Total Records:** {summary['total_records']}\n"
-                markdown_content += f"- **Date Range:** {summary['date_range']}\n"
-                markdown_content += f"- **Average Value:** {summary['average']}\n"
-                markdown_content += f"- **Maximum Value:** {summary['max_value']}\n"
-                markdown_content += f"- **Minimum Value:** {summary['min_value']}\n\n"
-            
-            markdown_content += f"## Analysis Results\n\n"
-            markdown_content += analysis_content
-            
-            # Save to file
-            filepath = get_output_path(filename)
-            with open(filepath, 'w') as f:
-                f.write(markdown_content)
-            
-            print(f"\nAnalysis saved to {filepath}")
-        
+        _status("Preparing request and contacting OpenAI...")
+        with spinner("Contacting OpenAI"):
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                stream=True,
+            )
+
+        print("Streaming analysis...\n")
+        collected = []
+        start_time = time.time()
+        try:
+            for chunk in stream:
+                delta = None
+                try:
+                    delta = chunk.choices[0].delta
+                    piece = getattr(delta, 'content', None)
+                except Exception:
+                    delta = chunk.get('choices', [{}])[0].get('delta', {}) if isinstance(chunk, dict) else {}
+                    piece = delta.get('content')
+                if piece:
+                    collected.append(piece)
+                    print(piece, end='', flush=True)
+        except Exception as stream_err:
+            print(f"\nStreaming interrupted: {stream_err}\nFalling back to non-streaming request...")
+            with spinner("Waiting for response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+            collected.append(resp.choices[0].message.content)
+            print(resp.choices[0].message.content)
+
+        print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        analysis_content = "".join(collected)
+
+        _prompt_and_save_analysis(analysis_content, 'ChatGPT', 'health_analysis_chatgpt')
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
     except Exception as e:
         print(f"\nError during ChatGPT analysis: {str(e)}")
-        print("This might be due to an invalid API key or network issues.")
-        print("\nIf you're seeing an error about API versions, you have two options:")
-        print("1. Run 'pip install openai==0.28' to downgrade to the older version")
-        print("2. Or keep the current version and the updated code should work")
 
 def analyze_with_ollama(csv_files):
     """
@@ -1231,28 +1299,52 @@ def analyze_with_ollama(csv_files):
         4. Areas that might need attention or improvement
         """
 
-        # Rest of the Ollama API call
-        print("\nSending data to Deepseek-R1 via Ollama...")
-        response = ollama.chat(
-            model='deepseek-r1',
-            messages=[{
-                "role": "system",
-                "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."
-            }, {
-                "role": "user", 
-                "content": prompt
-            }],
-            options={
-                'temperature': 0.3,
-                'num_ctx': 6144
-            }
-        )
-
-        analysis_content = response['message']['content']
-        
-        print("\nDeepseek-R1 Analysis:")
-        print("=" * 50)
-        print(analysis_content)
+        # Rest of the Ollama API call with streaming
+        _status("Contacting local Ollama (Deepseek-R1)...")
+        collected = []
+        try:
+            with spinner("Contacting Ollama"):
+                stream = ollama.chat(
+                    model='deepseek-r1',
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    options={'temperature': 0.3, 'num_ctx': 6144},
+                    stream=True,
+                )
+            print("Streaming analysis...\n")
+            start_time = time.time()
+            for chunk in stream:
+                text = None
+                try:
+                    # Newer streaming format: incremental text in 'response'
+                    if isinstance(chunk, dict):
+                        text = (
+                            chunk.get('response')
+                            or chunk.get('message', {}).get('content')
+                        )
+                    else:
+                        text = str(chunk)
+                except Exception:
+                    text = None
+                if text:
+                    collected.append(text)
+                    print(text, end='', flush=True)
+            print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        except Exception:
+            with spinner("Waiting for Ollama response"):
+                response = ollama.chat(
+                    model='deepseek-r1',
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    options={'temperature': 0.3, 'num_ctx': 6144},
+                )
+            analysis_content = response['message']['content']
+            collected.append(analysis_content)
+            print(analysis_content)
         
         # Ask if user wants to save the analysis
         save_option = input("\nWould you like to save this analysis as a markdown file? (y/n): ").strip().lower()
@@ -1274,7 +1366,7 @@ def analyze_with_ollama(csv_files):
                 markdown_content += f"- **Minimum Value:** {summary['min_value']}\n\n"
             
             markdown_content += f"## Analysis Results\n\n"
-            markdown_content += analysis_content
+            markdown_content += "".join(collected)
             
             # Save to file
             filepath = get_output_path(filename)
@@ -1686,6 +1778,10 @@ def _prompt_and_save_analysis(analysis_content: str, provider_label: str, filena
     print(f"\n{provider_label} Analysis:")
     print("=" * 50)
     print(analysis_content)
+    # Do not offer to save if there's no content
+    if not analysis_content or not str(analysis_content).strip():
+        print("\n(No content received to save.)")
+        return
     save_option = input("\nSave this analysis as a markdown file? (y/n): ").strip().lower()
     if save_option in ('y', 'yes'):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1722,15 +1818,63 @@ def analyze_with_claude(csv_files):
     try:
         model_name = _prompt_model_name("claude_model", "claude-3-5-sonnet-latest", "Claude", "claude-3-5-sonnet-latest, claude-3-opus-latest")
         client = anthropic.Anthropic(api_key=key)
-        resp = client.messages.create(
-            model=model_name,
-            max_tokens=2000,
-            temperature=0.3,
-            system="You are a health data analyst with strong technical skills.",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        content = "".join([getattr(b, 'text', '') for b in resp.content])
-        _prompt_and_save_analysis(content, 'Claude', 'health_analysis_claude')
+
+        _status("Contacting Claude (streaming)...")
+        collected = []
+        try:
+            # Stream if available
+            with spinner("Contacting Claude"):
+                stream = client.messages.stream(
+                    model=model_name,
+                    max_tokens=2000,
+                    temperature=0.3,
+                    system="You are a health data analyst with strong technical skills.",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+            print("Streaming analysis...\n")
+            start_time = time.time()
+            with stream as s:
+                for event in s:
+                    try:
+                        # anthropic events: content_block_delta has .delta with text
+                        if getattr(event, 'type', '') == 'content_block_delta':
+                            delta = getattr(event, 'delta', None)
+                            text = getattr(delta, 'text', None) if delta is not None else None
+                            if not text and isinstance(delta, dict):
+                                text = delta.get('text')
+                            if text:
+                                collected.append(text)
+                                print(text, end='', flush=True)
+                    except Exception:
+                        pass
+                final_msg = s.get_final_message()
+                if getattr(final_msg, 'content', None):
+                    # Append any remaining text blocks
+                    for blk in final_msg.content:
+                        text = getattr(blk, 'text', None)
+                        if not text and isinstance(blk, dict):
+                            text = blk.get('text')
+                        if text:
+                            collected.append(text)
+                            print(text, end='', flush=True)
+            print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        except Exception:
+            # Fallback to non-streaming
+            with spinner("Waiting for Claude response"):
+                resp = client.messages.create(
+                    model=model_name,
+                    max_tokens=2000,
+                    temperature=0.3,
+                    system="You are a health data analyst with strong technical skills.",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+            content = "".join([getattr(b, 'text', '') for b in resp.content])
+            collected.append(content)
+            print(content)
+
+        _prompt_and_save_analysis("".join(collected), 'Claude', 'health_analysis_claude')
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
     except Exception as e:
         print(f"Error during Claude analysis: {e}")
 
@@ -1748,11 +1892,39 @@ def analyze_with_gemini(csv_files):
         genai.configure(api_key=key)
         model_name = _prompt_model_name('gemini_model', 'gemini-1.5-pro', 'Gemini', 'gemini-1.5-pro, gemini-1.5-flash')
         model = genai.GenerativeModel(model_name)
-        resp = model.generate_content(prompt)
-        content = getattr(resp, 'text', None)
-        if not content and getattr(resp, 'candidates', None):
-            content = resp.candidates[0].content.parts[0].text
-        _prompt_and_save_analysis(content or '', 'Gemini', 'health_analysis_gemini')
+        _status("Contacting Gemini (streaming)...")
+        collected = []
+        try:
+            with spinner("Contacting Gemini"):
+                resp = model.generate_content(prompt, stream=True)
+            print("Streaming analysis...\n")
+            start_time = time.time()
+            for chunk in resp:
+                text = getattr(chunk, 'text', None)
+                if not text and getattr(chunk, 'candidates', None):
+                    try:
+                        text = chunk.candidates[0].content.parts[0].text
+                    except Exception:
+                        text = None
+                if text:
+                    collected.append(text)
+                    print(text, end='', flush=True)
+            print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        except Exception:
+            with spinner("Waiting for Gemini response"):
+                resp = model.generate_content(prompt)
+            content = getattr(resp, 'text', None)
+            if not content and getattr(resp, 'candidates', None):
+                try:
+                    content = resp.candidates[0].content.parts[0].text
+                except Exception:
+                    content = ''
+            collected.append(content or '')
+            print(content or '')
+
+        _prompt_and_save_analysis("".join(collected), 'Gemini', 'health_analysis_gemini')
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
     except Exception as e:
         print(f"Error during Gemini analysis: {e}")
 
@@ -1765,18 +1937,52 @@ def analyze_with_grok(csv_files):
         return
     try:
         model_name = _prompt_model_name("grok_model", "grok-beta", "Grok (xAI)")
-        client = openai.OpenAI(api_key=key, base_url="https://api.x.ai/v1")
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": "You are a health data analyst with strong technical skills."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=2000
-        )
-        content = response.choices[0].message.content
-        _prompt_and_save_analysis(content, 'Grok', 'health_analysis_grok')
+        client = openai.OpenAI(api_key=key, base_url="https://api.x.ai/v1", timeout=60.0, max_retries=1)
+
+        _status("Contacting Grok (streaming)...")
+        with spinner("Contacting Grok"):
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                stream=True,
+            )
+        print("Streaming analysis...\n")
+        collected = []
+        start_time = time.time()
+        try:
+            for chunk in stream:
+                try:
+                    delta = chunk.choices[0].delta
+                    piece = getattr(delta, 'content', None)
+                except Exception:
+                    delta = chunk.get('choices', [{}])[0].get('delta', {}) if isinstance(chunk, dict) else {}
+                    piece = delta.get('content')
+                if piece:
+                    collected.append(piece)
+                    print(piece, end='', flush=True)
+        except Exception:
+            with spinner("Waiting for Grok response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+            text = resp.choices[0].message.content
+            collected.append(text)
+            print(text)
+        print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        _prompt_and_save_analysis("".join(collected), 'Grok', 'health_analysis_grok')
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
     except Exception as e:
         print(f"Error during Grok analysis: {e}")
 
@@ -1787,22 +1993,153 @@ def analyze_with_openrouter(csv_files):
     data_summary, prompt = _prepare_ai_data(csv_files)
     if prompt is None:
         return
+
+    # Prompt for model; remember across runs
+    model_name = _prompt_model_name(
+        "openrouter_model",
+        "openrouter/auto",
+        "OpenRouter",
+        "openrouter/auto, meta-llama/llama-3.1-8b-instruct:free"
+    )
+    _status(f"Using OpenRouter model: {model_name}")
+
     try:
-        model_name = _prompt_model_name("openrouter_model", "openrouter/auto", "OpenRouter", "openrouter/auto, meta-llama/llama-3.1-8b-instruct:free")
-        client = openai.OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": "You are a health data analyst with strong technical skills."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=2000
+        # Configure client with sane timeouts and minimal retries
+        client = openai.OpenAI(
+            api_key=key,
+            base_url="https://openrouter.ai/api/v1",
+            timeout=60.0,
+            max_retries=1,
         )
-        content = response.choices[0].message.content
-        _prompt_and_save_analysis(content, 'OpenRouter', 'health_analysis_openrouter')
+
+        # Optional provider routing controls via env:
+        #   OPENROUTER_PROVIDER_ORDER=OpenRouter,Together,DeepInfra
+        #   OPENROUTER_ALLOW_FALLBACKS=true
+        provider_order = _parse_csv_env('OPENROUTER_PROVIDER_ORDER')
+        allow_fallbacks = _parse_bool_env('OPENROUTER_ALLOW_FALLBACKS', True)
+        extra_body = {}
+        if provider_order:
+            extra_body['provider'] = {'order': provider_order}
+        if allow_fallbacks:
+            extra_body['allow_fallbacks'] = True
+
+        # Try to validate the model is known (best-effort)
+        try:
+            with spinner("Validating model"):
+                _ = client.models.retrieve(model_name)
+        except Exception:
+            _status("Model may be unavailable or gated; continuing anyway…")
+
+        # Show spinner while sending the request
+        _status("Preparing request and contacting OpenRouter...")
+        with spinner("Contacting OpenRouter"):
+            # Try streaming first for immediate feedback
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                stream=True,
+                extra_body=extra_body or None,
+            )
+
+        print("Streaming analysis...\n")
+        collected = []
+        start_time = time.time()
+        try:
+            for chunk in stream:
+                try:
+                    delta = chunk.choices[0].delta
+                    piece = getattr(delta, 'content', None)
+                    if piece:
+                        collected.append(piece)
+                        # Print incrementally without adding extra newlines
+                        print(piece, end='', flush=True)
+                except Exception:
+                    # Some SDKs return dicts; handle generically
+                    delta = chunk.get('choices', [{}])[0].get('delta', {}) if isinstance(chunk, dict) else {}
+                    piece = delta.get('content')
+                    if piece:
+                        collected.append(piece)
+                        print(piece, end='', flush=True)
+        except KeyboardInterrupt:
+            print("\n(User cancelled streaming)\n")
+        except Exception as stream_err:
+            # If streaming fails mid-flight, fall back to a non-streaming request
+            print(f"\nStreaming interrupted: {stream_err}\nFalling back to non-streaming request...")
+            with spinner("Waiting for response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                    extra_body=extra_body or None,
+                )
+            content = resp.choices[0].message.content
+            collected.append(content)
+            print(content)
+
+        # If nothing was streamed, try a non-stream request once
+        if len(collected) == 0:
+            _status("No streamed content received; requesting non-stream response...")
+            with spinner("Waiting for response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                    extra_body=extra_body or None,
+                )
+            content = resp.choices[0].message.content or ''
+            if content:
+                collected.append(content)
+                print(content)
+
+        # Completions fallback for legacy models
+        if len(collected) == 0:
+            _status("Chat not supported? Trying legacy completions API…")
+            combined_prompt = (
+                "You are a health data analyst with strong technical skills.\n\n" + prompt
+            )
+            try:
+                with spinner("Calling completions API"):
+                    cresp = client.completions.create(
+                        model=model_name,
+                        prompt=combined_prompt,
+                        max_tokens=2000,
+                        temperature=0.3,
+                        extra_body=extra_body or None,
+                    )
+                ctext = getattr(cresp.choices[0], 'text', None)
+                if ctext:
+                    collected.append(ctext)
+                    print(ctext)
+            except Exception as ce:
+                _status(f"Completions fallback failed: {ce}")
+
+        print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+
+        # Join collected text and offer to save
+        final_text = "".join(collected)
+        _prompt_and_save_analysis(final_text, 'OpenRouter', 'health_analysis_openrouter')
+
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
     except Exception as e:
         print(f"Error during OpenRouter analysis: {e}")
+        print("\nTips:")
+        print("- Try a widely available model like 'openrouter/auto' or a :free variant.")
+        print("- Check your network and OpenRouter API status/key.")
+        print("- If it keeps hanging, rerun with a different model.")
 
 def main():
     """
