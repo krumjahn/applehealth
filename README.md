@@ -320,8 +320,8 @@ On macOS/Linux, the app prints a one-line tip to open each saved plot (e.g., `op
 
 AI model preferences
 - The tool remembers your last-selected models for each AI provider (OpenAI, Claude, Gemini, Grok, OpenRouter).
-- Preferences are stored in `ai_prefs.json` in your chosen output directory.
- - The app also remembers your last-used export.xml path and output directory in the same `ai_prefs.json`.
+- Preferences are stored in `~/.applehealth/ai_prefs.json` by default (override with `APPLEHEALTH_PREFS`).
+- The app also remembers your last-used export.xml path and output directory in the same `ai_prefs.json`.
 
 ## 🆘 Troubleshooting
 

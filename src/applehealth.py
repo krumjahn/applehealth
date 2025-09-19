@@ -103,9 +103,20 @@ def print_open_hint(file_path: str):
     except Exception:
         pass
 
-# Simple persisted preferences for AI models, stored in OUTPUT_DIR
+# Simple persisted preferences for AI and paths
+# Store under user home to avoid bootstrapping OUTPUT_DIR recursion
 def _prefs_path() -> str:
-    return get_output_path('ai_prefs.json')
+    try:
+        env_path = os.environ.get('APPLEHEALTH_PREFS')
+        if env_path:
+            return os.path.abspath(os.path.expanduser(env_path))
+        home = os.path.expanduser('~')
+        pref_dir = os.path.join(home, '.applehealth')
+        os.makedirs(pref_dir, exist_ok=True)
+        return os.path.join(pref_dir, 'ai_prefs.json')
+    except Exception:
+        # Fallback to CWD
+        return os.path.abspath('ai_prefs.json')
 
 def _load_ai_prefs() -> dict:
     try:
