@@ -1813,23 +1813,26 @@ def main():
     print(f"\nOutputs will be saved to: {out_dir}")
     print("Tip: You can drag-and-drop your export.xml into this window when prompted.")
     while True:
-        print("\nWhat would you like to analyze?")
-        print("1. Steps")
-        print("2. Distance")
-        print("3. Heart Rate")
-        print("4. Weight")
-        print("5. Sleep")
-        print("6. Workouts")
-        print("7. Analyze All Data with ChatGPT")
-        print("8. Analyze with Local LLM (Ollama)")
-        print("9. Analyze with External LLM (Ollama)")
-        print("10. Advanced AI Settings")
-        print("11. Exit")
-        print("12. Analyze with Claude (Anthropic)")
-        print("13. Analyze with Gemini (Google)")
-        print("14. Analyze with Grok (xAI)")
-        print("15. Analyze with OpenRouter")
-        print("16. Reset Preferences")
+        print("\nWhat would you like to do?")
+        # Core analyses
+        print("1. Analyze Steps")
+        print("2. Analyze Distance")
+        print("3. Analyze Heart Rate")
+        print("4. Analyze Weight")
+        print("5. Analyze Sleep")
+        print("6. Analyze Workouts")
+        # AI analyses
+        print("7. AI: Analyze All Data (OpenAI)")
+        print("8. AI: Analyze with Claude (Anthropic)")
+        print("9. AI: Analyze with Gemini (Google)")
+        print("10. AI: Analyze with Grok (xAI)")
+        print("11. AI: Analyze with OpenRouter")
+        print("12. AI: Analyze with Ollama (Local)")
+        print("13. AI: Analyze with Ollama (Remote)")
+        # Settings and exit
+        print("14. AI Settings")
+        print("15. Reset Preferences")
+        print("16. Exit")
         
         choice = input("Enter your choice (1-16): ")
         
@@ -1844,7 +1847,7 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'1','2','3','4','5','6','7','8','9','12','13','14','15'}:
+        if choice in {'1','2','3','4','5','6','7','8','9','10','11','12','13'}:
             if not ensure_export_available():
                 continue
 
@@ -1863,25 +1866,19 @@ def main():
         elif choice == '7':
             analyze_with_chatgpt(data_files)
         elif choice == '8':
-            analyze_with_ollama(data_files)
-        elif choice == '9':
-            analyze_with_external_ollama(data_files)
-        elif choice == '12':
             analyze_with_claude(data_files)
-        elif choice == '13':
+        elif choice == '9':
             analyze_with_gemini(data_files)
-        elif choice == '14':
-            analyze_with_grok(data_files)
-        elif choice == '15':
-            analyze_with_openrouter(data_files)
-        elif choice == '16':
-            confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
-            if confirm in ('y', 'yes'):
-                reset_preferences()
-            else:
-                print("Cancelled.")
         elif choice == '10':
-            print("\nAdvanced AI Settings:")
+            analyze_with_grok(data_files)
+        elif choice == '11':
+            analyze_with_openrouter(data_files)
+        elif choice == '12':
+            analyze_with_ollama(data_files)
+        elif choice == '13':
+            analyze_with_external_ollama(data_files)
+        elif choice == '14':
+            print("\nAI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
             print("0.0-0.3: Best for statistical analysis and consistent insights")
@@ -1890,7 +1887,13 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '11':
+        elif choice == '15':
+            confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
+            if confirm in ('y', 'yes'):
+                reset_preferences()
+            else:
+                print("Cancelled.")
+        elif choice == '16':
             print("Goodbye!")
             break
         else:

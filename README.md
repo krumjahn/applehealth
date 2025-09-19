@@ -241,17 +241,22 @@ Notes:
 
 Choose from the menu:
 
-1. Steps Analysis
-2. Distance Tracking
-3. Heart Rate Analysis
-4. Weight Tracking
-5. Sleep Analysis
-6. Workout Analysis
-7. Analyze All Data with ChatGPT
-8. Analyze with Local LLM (Ollama)
-9. Analyze with External LLM (Ollama)
-10. Advanced AI Settings
-11. Exit
+1. Analyze Steps
+2. Analyze Distance
+3. Analyze Heart Rate
+4. Analyze Weight
+5. Analyze Sleep
+6. Analyze Workouts
+7. AI: Analyze All Data (OpenAI)
+8. AI: Analyze with Claude (Anthropic)
+9. AI: Analyze with Gemini (Google)
+10. AI: Analyze with Grok (xAI)
+11. AI: Analyze with OpenRouter
+12. AI: Analyze with Ollama (Local)
+13. AI: Analyze with Ollama (Remote)
+14. AI Settings
+15. Reset Preferences
+16. Exit
 
 ### 🤖 AI Analysis
 
