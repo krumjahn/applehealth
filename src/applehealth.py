@@ -940,10 +940,11 @@ def analyze_with_chatgpt(csv_files):
 
     try:
         # Send to OpenAI API using the new client syntax (v1.0.0+)
-        print("\nSending data to ChatGPT for analysis...")
+        model_name = _prompt_model_name("gpt-4", "OpenAI (ChatGPT)", "gpt-4o, gpt-4o-mini, gpt-4-turbo")
+        print(f"\nSending data to ChatGPT for analysis using model: {model_name}...")
         client = openai.OpenAI(api_key=api_key)
         response = client.chat.completions.create(
-            model="gpt-4",
+            model=model_name,
             messages=[
                 {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
                 {"role": "user", "content": prompt}
@@ -1568,6 +1569,15 @@ def _prompt_and_save_analysis(analysis_content: str, provider_label: str, filena
             f.write(analysis_content)
         print(f"Saved to {filepath}")
 
+def _prompt_model_name(default_model: str, provider_label: str, examples: str = "") -> str:
+    """Prompt user to optionally override the model name for a provider."""
+    try:
+        hint = f" (e.g., {examples})" if examples else ""
+        entered = input(f"\nModel for {provider_label} [{default_model}]{hint}: ").strip()
+        return entered or default_model
+    except Exception:
+        return default_model
+
 def analyze_with_claude(csv_files):
     key = _get_or_prompt_key('ANTHROPIC_API_KEY', 'Anthropic (Claude)')
     if not key:
@@ -1579,9 +1589,10 @@ def analyze_with_claude(csv_files):
     if prompt is None:
         return
     try:
+        model_name = _prompt_model_name("claude-3-5-sonnet-latest", "Claude", "claude-3-5-sonnet-latest, claude-3-opus-latest")
         client = anthropic.Anthropic(api_key=key)
         resp = client.messages.create(
-            model="claude-3-5-sonnet-latest",
+            model=model_name,
             max_tokens=2000,
             temperature=0.3,
             system="You are a health data analyst with strong technical skills.",
@@ -1604,7 +1615,8 @@ def analyze_with_gemini(csv_files):
         return
     try:
         genai.configure(api_key=key)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model_name = _prompt_model_name('gemini-1.5-pro', 'Gemini', 'gemini-1.5-pro, gemini-1.5-flash')
+        model = genai.GenerativeModel(model_name)
         resp = model.generate_content(prompt)
         content = getattr(resp, 'text', None)
         if not content and getattr(resp, 'candidates', None):
@@ -1621,9 +1633,10 @@ def analyze_with_grok(csv_files):
     if prompt is None:
         return
     try:
+        model_name = _prompt_model_name("grok-beta", "Grok (xAI)")
         client = openai.OpenAI(api_key=key, base_url="https://api.x.ai/v1")
         response = client.chat.completions.create(
-            model="grok-beta",
+            model=model_name,
             messages=[
                 {"role": "system", "content": "You are a health data analyst with strong technical skills."},
                 {"role": "user", "content": prompt}
@@ -1644,9 +1657,10 @@ def analyze_with_openrouter(csv_files):
     if prompt is None:
         return
     try:
+        model_name = _prompt_model_name("openrouter/auto", "OpenRouter", "openrouter/auto, meta-llama/llama-3.1-8b-instruct:free")
         client = openai.OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
         response = client.chat.completions.create(
-            model="openrouter/auto",
+            model=model_name,
             messages=[
                 {"role": "system", "content": "You are a health data analyst with strong technical skills."},
                 {"role": "user", "content": prompt}
