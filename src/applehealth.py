@@ -41,6 +41,7 @@ import sys
 import ollama
 import argparse
 import json
+from urllib.parse import unquote as _url_unquote
 from typing import Optional
 try:
     import anthropic  # Claude SDK
@@ -65,7 +66,8 @@ def get_output_dir():
     4) Current working directory
     """
     global _output_dir
-    base = _output_dir or os.environ.get('OUTPUT_DIR') or _get_saved_pref('output_dir') or os.getcwd()
+    default_out = os.path.join(os.getcwd(), 'health_out')
+    base = _output_dir or os.environ.get('OUTPUT_DIR') or _get_saved_pref('output_dir') or default_out
     base = os.path.abspath(os.path.expanduser(base))
     try:
         os.makedirs(base, exist_ok=True)
@@ -249,15 +251,19 @@ def ensure_export_available() -> bool:
     print("\nexport.xml not found.")
     print("Provide the full path to your Apple Health export.xml,")
     print("or a directory containing export.xml. Enter 'q' to cancel.")
+    print("Tip: You can drag-and-drop the file or folder here and press Enter.")
     remembered = _get_saved_pref('export_xml', '')
     while True:
         prompt = f"Path to export.xml (or directory){f' [{remembered}]' if remembered else ''}: "
-        user_input = input(prompt).strip()
+        raw = input(prompt)
+        user_input = raw.strip()
         if user_input.lower() in ('q', 'quit', 'exit'):
             print("Skipping action: export.xml required.")
             return False
         if not user_input and remembered:
             user_input = remembered
+        # Sanitize drag-and-drop style inputs (quotes, file://, escaped spaces)
+        user_input = _sanitize_user_path(user_input)
         # Accept both file path and directory containing export.xml
         path = os.path.abspath(os.path.expanduser(user_input))
         if os.path.isdir(path):
@@ -275,6 +281,24 @@ def ensure_export_available() -> bool:
             return True
         else:
             print("Invalid path. Please try again or enter 'q' to cancel.")
+
+def _sanitize_user_path(inp: str) -> str:
+    try:
+        if not inp:
+            return inp
+        s = inp.strip()
+        # Handle file:// URLs
+        if s.startswith('file://'):
+            s = _url_unquote(s[len('file://'):])
+        # Strip surrounding quotes
+        if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+            s = s[1:-1]
+        # On Unix-like systems, unescape common backslash-escapes from drag-drop
+        if os.name != 'nt':
+            s = s.replace('\\ ', ' ').replace('\\(', '(').replace('\\)', ')')
+        return s
+    except Exception:
+        return inp
 
 def parse_health_data(file_path, record_type):
     """
@@ -1773,6 +1797,10 @@ def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
     """
+    # Greet and show where outputs will be saved by default
+    out_dir = get_output_dir()
+    print(f"\nOutputs will be saved to: {out_dir}")
+    print("Tip: You can drag-and-drop your export.xml into this window when prompted.")
     while True:
         print("\nWhat would you like to analyze?")
         print("1. Steps")
