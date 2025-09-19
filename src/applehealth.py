@@ -55,12 +55,24 @@ _export_xml_path = None
 _output_dir = os.environ.get('OUTPUT_DIR')
 
 def get_output_dir():
-    """Return the absolute output directory, creating it if needed."""
+    """Return the absolute output directory, creating it if needed.
+
+    Order of precedence:
+    1) CLI --out overrides
+    2) $OUTPUT_DIR env var
+    3) Remembered value in ai_prefs.json (output_dir)
+    4) Current working directory
+    """
     global _output_dir
-    base = _output_dir or os.environ.get('OUTPUT_DIR') or os.getcwd()
+    base = _output_dir or os.environ.get('OUTPUT_DIR') or _get_saved_pref('output_dir') or os.getcwd()
     base = os.path.abspath(os.path.expanduser(base))
     try:
         os.makedirs(base, exist_ok=True)
+    except Exception:
+        pass
+    # Persist chosen directory for convenience
+    try:
+        _set_saved_pref('output_dir', base)
     except Exception:
         pass
     return base
@@ -118,6 +130,15 @@ def _set_saved_model(provider_key: str, model: str):
     prefs[provider_key] = model
     _save_ai_prefs(prefs)
 
+def _get_saved_pref(key: str, default_value: str | None = None):
+    prefs = _load_ai_prefs()
+    return prefs.get(key, default_value)
+
+def _set_saved_pref(key: str, value: str):
+    prefs = _load_ai_prefs()
+    prefs[key] = value
+    _save_ai_prefs(prefs)
+
 def resolve_export_xml():
     """Locate the Apple Health export.xml across common locations.
 
@@ -133,6 +154,10 @@ def resolve_export_xml():
     
     # Gather candidate paths (keep order of preference)
     candidates = []
+    # Remembered path (from previous successful runs)
+    remembered = _get_saved_pref('export_xml')
+    if remembered:
+        candidates.append(remembered)
     env_path = os.environ.get('EXPORT_XML')
     if env_path:
         candidates.append(env_path)
@@ -158,6 +183,10 @@ def resolve_export_xml():
         if os.path.exists(path):
             if os.path.isfile(path):
                 print(f"Found export.xml at: {path}")
+                try:
+                    _set_saved_pref('export_xml', path)
+                except Exception:
+                    pass
                 return path
             # If it's a directory, try to find export.xml inside it
             elif os.path.isdir(path):
@@ -165,6 +194,10 @@ def resolve_export_xml():
                 possible = os.path.join(path, 'export.xml')
                 if os.path.isfile(possible):
                     print(f"Found export.xml inside directory at: {possible}")
+                    try:
+                        _set_saved_pref('export_xml', possible)
+                    except Exception:
+                        pass
                     return possible
                 # Also check if the directory name suggests it contains an export
                 # (e.g., for cases where the mounted path is actually a directory)
@@ -172,6 +205,10 @@ def resolve_export_xml():
                     candidate_file = os.path.join(path, filename)
                     if os.path.isfile(candidate_file):
                         print(f"Found health export file at: {candidate_file}")
+                        try:
+                            _set_saved_pref('export_xml', candidate_file)
+                        except Exception:
+                            pass
                         return candidate_file
 
     # Not found: raise a helpful error
@@ -195,11 +232,15 @@ def ensure_export_available() -> bool:
     print("\nexport.xml not found.")
     print("Provide the full path to your Apple Health export.xml,")
     print("or a directory containing export.xml. Enter 'q' to cancel.")
+    remembered = _get_saved_pref('export_xml', '')
     while True:
-        user_input = input("Path to export.xml (or directory): ").strip()
+        prompt = f"Path to export.xml (or directory){f' [{remembered}]' if remembered else ''}: "
+        user_input = input(prompt).strip()
         if user_input.lower() in ('q', 'quit', 'exit'):
             print("Skipping action: export.xml required.")
             return False
+        if not user_input and remembered:
+            user_input = remembered
         # Accept both file path and directory containing export.xml
         path = os.path.abspath(os.path.expanduser(user_input))
         if os.path.isdir(path):
@@ -210,6 +251,10 @@ def ensure_export_available() -> bool:
             global _export_xml_path
             _export_xml_path = cand
             print(f"Using export file: {cand}")
+            try:
+                _set_saved_pref('export_xml', cand)
+            except Exception:
+                pass
             return True
         else:
             print("Invalid path. Please try again or enter 'q' to cancel.")
@@ -1822,8 +1867,16 @@ if __name__ == "__main__":
         chosen = args.export or args.path
         if chosen:
             _export_xml_path = os.path.abspath(os.path.expanduser(chosen))
+            try:
+                _set_saved_pref('export_xml', _export_xml_path)
+            except Exception:
+                pass
         if args.out:
             _output_dir = os.path.abspath(os.path.expanduser(args.out))
+            try:
+                _set_saved_pref('output_dir', _output_dir)
+            except Exception:
+                pass
     except SystemExit:
         raise
 
