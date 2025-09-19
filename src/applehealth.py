@@ -139,6 +139,22 @@ def _set_saved_pref(key: str, value: str):
     prefs[key] = value
     _save_ai_prefs(prefs)
 
+def reset_preferences():
+    """Delete saved preferences file and clear in-memory overrides."""
+    path = _prefs_path()
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+            print(f"Preferences reset. Deleted {path}")
+        else:
+            print("No preferences file found to delete.")
+    except Exception as e:
+        print(f"Failed to reset preferences: {e}")
+    # Clear session overrides
+    global _export_xml_path, _output_dir
+    _export_xml_path = None
+    _output_dir = None
+
 def resolve_export_xml():
     """Locate the Apple Health export.xml across common locations.
 
@@ -1773,8 +1789,9 @@ def main():
         print("13. Analyze with Gemini (Google)")
         print("14. Analyze with Grok (xAI)")
         print("15. Analyze with OpenRouter")
+        print("16. Reset Preferences")
         
-        choice = input("Enter your choice (1-15): ")
+        choice = input("Enter your choice (1-16): ")
         
         # List of available data files and their types
         data_files = [
@@ -1817,6 +1834,12 @@ def main():
             analyze_with_grok(data_files)
         elif choice == '15':
             analyze_with_openrouter(data_files)
+        elif choice == '16':
+            confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
+            if confirm in ('y', 'yes'):
+                reset_preferences()
+            else:
+                print("Cancelled.")
         elif choice == '10':
             print("\nAdvanced AI Settings:")
             print("Current default temperature: 0.3")

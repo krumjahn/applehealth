@@ -376,6 +376,11 @@ What would you like to analyze?
 9. Analyze with External LLM (Ollama)
 10. Advanced AI Settings
 11. Exit
+12. Analyze with Claude (Anthropic)
+13. Analyze with Gemini (Google)
+14. Analyze with Grok (xAI)
+15. Analyze with OpenRouter
+16. Reset Preferences
 Enter your choice (1-11): 1
 Using export file: /absolute/path/to/export.xml
 Starting to parse HKQuantityTypeIdentifierStepCount...
