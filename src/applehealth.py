@@ -41,6 +41,7 @@ import sys
 import ollama
 import argparse
 import json
+from typing import Optional
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -130,7 +131,7 @@ def _set_saved_model(provider_key: str, model: str):
     prefs[provider_key] = model
     _save_ai_prefs(prefs)
 
-def _get_saved_pref(key: str, default_value: str | None = None):
+def _get_saved_pref(key: str, default_value: Optional[str] = None):
     prefs = _load_ai_prefs()
     return prefs.get(key, default_value)
 
