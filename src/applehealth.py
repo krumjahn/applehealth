@@ -39,6 +39,141 @@ import os
 from dotenv import load_dotenv
 import sys
 import ollama
+import argparse
+
+# Optional user-provided path to export.xml (from CLI or prompt)
+_export_xml_path = None
+_output_dir = os.environ.get('OUTPUT_DIR')
+
+def get_output_dir():
+    """Return the absolute output directory, creating it if needed."""
+    global _output_dir
+    base = _output_dir or os.environ.get('OUTPUT_DIR') or os.getcwd()
+    base = os.path.abspath(os.path.expanduser(base))
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        pass
+    return base
+
+def get_output_path(filename: str) -> str:
+    """Join the output directory with the provided filename."""
+    return os.path.join(get_output_dir(), filename)
+
+def print_open_hint(file_path: str):
+    """Print a one-line hint to open a file on the current OS."""
+    try:
+        plat = sys.platform
+        if plat == 'darwin':
+            tool = 'open'
+        elif plat.startswith('linux'):
+            tool = 'xdg-open'
+        elif plat.startswith('win'):
+            tool = 'start ""'
+        else:
+            tool = None
+        if tool:
+            print(f"Tip: {tool} \"{file_path}\"")
+        else:
+            print(f"Tip: open this file in your viewer: {file_path}")
+    except Exception:
+        pass
+
+def resolve_export_xml():
+    """Locate the Apple Health export.xml across common locations.
+
+    Tries environment var EXPORT_XML, current dir, script dir, root-mounted
+    '/export.xml', and parent dir. If a candidate is a directory, checks for
+    an 'export.xml' inside it.
+    """
+    # Check if we have a global path set first
+    global _export_xml_path
+    if _export_xml_path and os.path.isfile(_export_xml_path):
+        print(f"Using globally set export file: {_export_xml_path}")
+        return _export_xml_path
+    
+    # Gather candidate paths (keep order of preference)
+    candidates = []
+    env_path = os.environ.get('EXPORT_XML')
+    if env_path:
+        candidates.append(env_path)
+    candidates.extend([
+        '/export.xml',  # Prioritize Docker mount path
+        'export.xml',
+        os.path.join(os.getcwd(), 'export.xml'),
+        os.path.join(os.path.dirname(__file__), 'export.xml'),
+        os.path.abspath(os.path.join(os.path.dirname(os.getcwd()), 'export.xml')),
+        '../export.xml',
+    ])
+
+    # Deduplicate while preserving order
+    seen = set()
+    uniq = []
+    for p in candidates:
+        ap = os.path.abspath(p)
+        if ap not in seen:
+            uniq.append(ap)
+            seen.add(ap)
+
+    for path in uniq:
+        if os.path.exists(path):
+            if os.path.isfile(path):
+                print(f"Found export.xml at: {path}")
+                return path
+            # If it's a directory, try to find export.xml inside it
+            elif os.path.isdir(path):
+                # First, try looking for export.xml inside the directory
+                possible = os.path.join(path, 'export.xml')
+                if os.path.isfile(possible):
+                    print(f"Found export.xml inside directory at: {possible}")
+                    return possible
+                # Also check if the directory name suggests it contains an export
+                # (e.g., for cases where the mounted path is actually a directory)
+                for filename in ['export.xml', 'apple_health_export.xml', 'HealthData_export.xml']:
+                    candidate_file = os.path.join(path, filename)
+                    if os.path.isfile(candidate_file):
+                        print(f"Found health export file at: {candidate_file}")
+                        return candidate_file
+
+    # Not found: raise a helpful error
+    raise FileNotFoundError(
+        "export.xml not found. Set EXPORT_XML to the file path, or mount it in Docker, e.g.\n"
+        "-v \"/path/to/export.xml\":/export.xml or -v \"/path/to/apple_health_export\":/export\n"
+        "Available paths searched:\n" + "\n".join(f"  - {p} (exists: {os.path.exists(p)}, is_file: {os.path.isfile(p) if os.path.exists(p) else 'N/A'}, is_dir: {os.path.isdir(p) if os.path.exists(p) else 'N/A'})" for p in uniq)
+    )
+
+def ensure_export_available() -> bool:
+    """Ensure export.xml is available; prompt user if not.
+
+    Returns True if available, False if user cancels.
+    """
+    try:
+        _ = resolve_export_xml()
+        return True
+    except Exception:
+        pass
+
+    print("\nexport.xml not found.")
+    print("Provide the full path to your Apple Health export.xml,")
+    print("or a directory containing export.xml. Enter 'q' to cancel.")
+    while True:
+        user_input = input("Path to export.xml (or directory): ").strip()
+        if user_input.lower() in ('q', 'quit', 'exit'):
+            print("Skipping action: export.xml required.")
+            return False
+        # Accept both file path and directory containing export.xml
+        path = os.path.abspath(os.path.expanduser(user_input))
+        if os.path.isdir(path):
+            cand = os.path.join(path, 'export.xml')
+        else:
+            cand = path
+        if os.path.isfile(cand):
+            global _export_xml_path
+            _export_xml_path = cand
+            print(f"Using export file: {cand}")
+            return True
+        else:
+            print("Invalid path. Please try again or enter 'q' to cancel.")
 
 def parse_health_data(file_path, record_type):
     """
@@ -78,23 +213,34 @@ def analyze_steps():
     Analyze and visualize daily step count data.
     Shows a time series plot of daily total steps and exports data to CSV.
     """
-    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
     df = parse_health_data(export_path, 'HKQuantityTypeIdentifierStepCount')
     
     # Check if any step data was found
     if len(df) == 0:
         print("No step data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        DataFrame(columns=['date', 'value']).to_csv('steps_data.csv', index=False)
-        print("Created empty steps_data.csv file.")
+        empty_csv = get_output_path('steps_data.csv')
+        DataFrame(columns=['date', 'value']).to_csv(empty_csv, index=False)
+        print(f"Created empty steps_data.csv at {empty_csv}.")
         return
     
     # Daily sum of steps
     daily_steps = df.groupby(df['date'].dt.date)['value'].sum()
     
     # Export to CSV
-    daily_steps.to_csv('steps_data.csv', header=True)
-    print("Steps data exported to 'steps_data.csv'")
+    csv_main = get_output_path('steps_data.csv')
+    daily_steps.to_csv(csv_main, header=True)
+    
+    # Also write a compatibility filename without underscore if users expect it
+    try:
+        csv_compat = get_output_path('stepsdata.csv')
+        daily_steps.to_csv(csv_compat, header=True)
+        compat_note = f" and compatibility file at {csv_compat}"
+    except Exception:
+        compat_note = ""
+    print(f"Steps data exported to {csv_main}{compat_note}")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -103,30 +249,78 @@ def analyze_steps():
     plt.xlabel('Date')
     plt.ylabel('Steps')
     plt.grid(True)
-    plt.show()
+    
+    # Save plot to file so it works in headless environments
+    plot_path = get_output_path('steps_plot.png')
+    try:
+        plt.tight_layout()
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    
+    # Try to show the plot; skip if backend is non-interactive
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
+
+    # Print a concise textual analysis summary
+    try:
+        total_days = len(daily_steps)
+        date_min = min(daily_steps.index)
+        date_max = max(daily_steps.index)
+        total_steps = int(daily_steps.sum())
+        avg_steps = float(daily_steps.mean())
+        median_steps = float(daily_steps.median())
+        max_day = daily_steps.idxmax()
+        max_steps = int(daily_steps.max())
+        over_10k = int((daily_steps >= 10000).sum())
+        last7_avg = float(daily_steps.tail(7).mean()) if total_days >= 7 else float(daily_steps.mean())
+
+        print("\nSteps Summary:")
+        print(f"- Date range: {date_min} to {date_max} ({total_days} days)")
+        print(f"- Total steps: {total_steps:,}")
+        print(f"- Average per day: {avg_steps:,.0f} (median {median_steps:,.0f})")
+        print(f"- Best day: {max_day} with {max_steps:,} steps")
+        print(f"- Days ≥10k steps: {over_10k}")
+        print(f"- Last 7-day average: {last7_avg:,.0f}")
+        print(f"- CSV: {csv_main}")
+        if compat_note:
+            print(f"- CSV (compat): {csv_compat}")
+        print(f"- Plot: {plot_path}")
+        print_open_hint(plot_path)
+        print_open_hint(plot_path)
+        print_open_hint(plot_path)
+    except Exception:
+        # Non-fatal if any of the above fails
+        pass
 
 def analyze_distance():
     """
     Analyze and visualize daily walking/running distance.
     Shows a time series plot of daily total distance in kilometers and exports data to CSV.
     """
-    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
     df = parse_health_data(export_path, 'HKQuantityTypeIdentifierDistanceWalkingRunning')
     
     # Check if any distance data was found
     if len(df) == 0:
         print("No distance data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        DataFrame(columns=['date', 'value']).to_csv('distance_data.csv', index=False)
-        print("Created empty distance_data.csv file.")
+        DataFrame(columns=['date', 'value']).to_csv(get_output_path('distance_data.csv'), index=False)
+        print(f"Created empty distance_data.csv at {get_output_path('distance_data.csv')}")
         return
     
     # Daily sum of distance (already in kilometers from Apple Health)
     daily_distance = df.groupby(df['date'].dt.date)['value'].sum()
     
     # Export to CSV
-    daily_distance.to_csv('distance_data.csv', header=True)
-    print("Distance data exported to 'distance_data.csv'")
+    csv_path = get_output_path('distance_data.csv')
+    daily_distance.to_csv(csv_path, header=True)
+    print(f"Distance data exported to {csv_path}")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -135,30 +329,66 @@ def analyze_distance():
     plt.xlabel('Date')
     plt.ylabel('Distance (km)')
     plt.grid(True)
-    plt.show()
+    plot_path = get_output_path('distance_plot.png')
+    try:
+        plt.tight_layout()
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
+
+    # Summary
+    try:
+        total_days = len(daily_distance)
+        date_min = min(daily_distance.index)
+        date_max = max(daily_distance.index)
+        total_km = float(daily_distance.sum())
+        avg_km = float(daily_distance.mean())
+        median_km = float(daily_distance.median())
+        max_day = daily_distance.idxmax()
+        max_km = float(daily_distance.max())
+        last7_avg = float(daily_distance.tail(7).mean()) if total_days >= 7 else avg_km
+
+        print("\nDistance Summary:")
+        print(f"- Date range: {date_min} to {date_max} ({total_days} days)")
+        print(f"- Total distance: {total_km:.1f} km")
+        print(f"- Average per day: {avg_km:.2f} km (median {median_km:.2f} km)")
+        print(f"- Best day: {max_day} with {max_km:.2f} km")
+        print(f"- Last 7-day average: {last7_avg:.2f} km")
+        print(f"- CSV: {csv_path}")
+        print(f"- Plot: {plot_path}")
+    except Exception:
+        pass
 
 def analyze_heart_rate():
     """
     Analyze and visualize daily heart rate data.
     Shows a time series plot of daily average heart rate in BPM and exports data to CSV.
     """
-    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
     df = parse_health_data(export_path, 'HKQuantityTypeIdentifierHeartRate')
     
     # Check if any heart rate data was found
     if len(df) == 0:
         print("No heart rate data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        DataFrame(columns=['date', 'value']).to_csv('heart_rate_data.csv', index=False)
-        print("Created empty heart_rate_data.csv file.")
+        DataFrame(columns=['date', 'value']).to_csv(get_output_path('heart_rate_data.csv'), index=False)
+        print(f"Created empty heart_rate_data.csv at {get_output_path('heart_rate_data.csv')}")
         return
     
     # Daily average heart rate
     daily_hr = df.groupby(df['date'].dt.date)['value'].mean()
     
     # Export to CSV
-    daily_hr.to_csv('heart_rate_data.csv', header=True)
-    print("Heart rate data exported to 'heart_rate_data.csv'")
+    csv_path = get_output_path('heart_rate_data.csv')
+    daily_hr.to_csv(csv_path, header=True)
+    print(f"Heart rate data exported to {csv_path}")
     
     # Plot
     plt.figure(figsize=(12, 6))
@@ -167,30 +397,67 @@ def analyze_heart_rate():
     plt.xlabel('Date')
     plt.ylabel('Heart Rate (BPM)')
     plt.grid(True)
-    plt.show()
+    plot_path = get_output_path('heart_rate_plot.png')
+    try:
+        plt.tight_layout()
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
+
+    # Summary
+    try:
+        total_days = len(daily_hr)
+        date_min = min(daily_hr.index)
+        date_max = max(daily_hr.index)
+        avg_bpm = float(daily_hr.mean())
+        median_bpm = float(daily_hr.median())
+        max_day = daily_hr.idxmax()
+        max_bpm = float(daily_hr.max())
+        min_day = daily_hr.idxmin()
+        min_bpm = float(daily_hr.min())
+        last7_avg = float(daily_hr.tail(7).mean()) if total_days >= 7 else avg_bpm
+
+        print("\nHeart Rate Summary:")
+        print(f"- Date range: {date_min} to {date_max} ({total_days} days)")
+        print(f"- Average daily mean: {avg_bpm:.1f} BPM (median {median_bpm:.1f})")
+        print(f"- Highest daily mean: {max_bpm:.1f} BPM on {max_day}")
+        print(f"- Lowest daily mean: {min_bpm:.1f} BPM on {min_day}")
+        print(f"- Last 7-day average: {last7_avg:.1f} BPM")
+        print(f"- CSV: {csv_path}")
+        print(f"- Plot: {plot_path}")
+    except Exception:
+        pass
 
 def analyze_weight():
     """
     Analyze and visualize body weight data.
     Shows a time series plot of daily weight measurements in kg.
     """
-    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
     df = parse_health_data(export_path, 'HKQuantityTypeIdentifierBodyMass')
     
     # Check if any weight data was found
     if len(df) == 0:
         print("No weight data found in the export file.")
         # Create an empty CSV file to indicate processing was attempted
-        DataFrame(columns=['date', 'value']).to_csv('weight_data.csv', index=False)
-        print("Created empty weight_data.csv file.")
+        DataFrame(columns=['date', 'value']).to_csv(get_output_path('weight_data.csv'), index=False)
+        print(f"Created empty weight_data.csv at {get_output_path('weight_data.csv')}")
         return
     
     # Daily weight (taking the last measurement of each day)
     daily_weight = df.groupby(df['date'].dt.date)['value'].last()
     
     # Export to CSV
-    daily_weight.to_csv('weight_data.csv', header=True)
-    print("Weight data exported to 'weight_data.csv'")
+    csv_path = get_output_path('weight_data.csv')
+    daily_weight.to_csv(csv_path, header=True)
+    print(f"Weight data exported to {csv_path}")
 
     # Plot
     plt.figure(figsize=(12, 6))
@@ -199,7 +466,40 @@ def analyze_weight():
     plt.xlabel('Date')
     plt.ylabel('Weight (kg)')
     plt.grid(True)
-    plt.show()
+    plot_path = get_output_path('weight_plot.png')
+    try:
+        plt.tight_layout()
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
+
+    # Summary
+    try:
+        total_days = len(daily_weight)
+        date_min = min(daily_weight.index)
+        date_max = max(daily_weight.index)
+        avg_wt = float(daily_weight.mean())
+        median_wt = float(daily_weight.median())
+        min_day = daily_weight.idxmin()
+        min_wt = float(daily_weight.min())
+        max_day = daily_weight.idxmax()
+        max_wt = float(daily_weight.max())
+
+        print("\nWeight Summary:")
+        print(f"- Date range: {date_min} to {date_max} ({total_days} days)")
+        print(f"- Average: {avg_wt:.1f} kg (median {median_wt:.1f} kg)")
+        print(f"- Min: {min_wt:.1f} kg on {min_day}")
+        print(f"- Max: {max_wt:.1f} kg on {max_day}")
+        print(f"- CSV: {csv_path}")
+        print(f"- Plot: {plot_path}")
+    except Exception:
+        pass
 
 def analyze_sleep():
     """
@@ -207,7 +507,8 @@ def analyze_sleep():
     Shows a time series plot of daily total sleep duration in hours.
     """
     print("Analyzing sleep data...")
-    export_path = '../export.xml' if not os.path.exists('export.xml') else 'export.xml'
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
     tree = ET.parse(export_path)
     root = tree.getroot()
     
@@ -271,8 +572,9 @@ def analyze_sleep():
     # Export to CSV
     export_df = df.copy()
     export_df['date'] = export_df['date'].astype(str)
-    export_df.to_csv('sleep_data.csv', index=False)
-    print(f"\nSleep data exported to 'sleep_data.csv'")
+    csv_path = get_output_path('sleep_data.csv')
+    export_df.to_csv(csv_path, index=False)
+    print(f"\nSleep data exported to {csv_path}")
     print(f"Exported {len(export_df)} sleep records")
     
     # Display first few rows
@@ -312,7 +614,17 @@ def analyze_sleep():
     plt.xticks(rotation=45)
     
     plt.tight_layout()
-    plt.show()
+    plot_path = get_output_path('sleep_plot.png')
+    try:
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
     
     # Print summary statistics
     print(f"\nSleep Summary:")
@@ -322,6 +634,9 @@ def analyze_sleep():
     if len(daily_sleep) > 0:
         print(f"Average nightly sleep: {daily_sleep.mean():.1f} hours")
         print(f"Total sleep time: {daily_sleep.sum():.1f} hours")
+    print(f"CSV: {csv_path}")
+    print(f"Plot: {plot_path}")
+    print_open_hint(plot_path)
     
     # Sleep type breakdown
     print(f"\nSleep Type Breakdown:")
@@ -355,7 +670,9 @@ def analyze_workouts():
     Exports workout data to CSV and shows time series plot of daily workout durations.
     """
     print("Analyzing workout data...")
-    tree = ET.parse('../export.xml' if not os.path.exists('export.xml') else 'export.xml')
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
+    tree = ET.parse(export_path)
     root = tree.getroot()
     
     workouts = []
@@ -424,8 +741,8 @@ def analyze_workouts():
     if not workouts:
         print("No workout data found!")
         # Create an empty CSV file to indicate processing was attempted
-        DataFrame(columns=['date', 'duration_hours', 'avg_heart_rate', 'measurements']).to_csv('workout_data.csv', index=False)
-        print("Created empty workout_data.csv file.")
+        DataFrame(columns=['date', 'duration_hours', 'avg_heart_rate', 'measurements']).to_csv(get_output_path('workout_data.csv'), index=False)
+        print(f"Created empty workout_data.csv at {get_output_path('workout_data.csv')}")
         return
         
     df = DataFrame(workouts)
@@ -434,8 +751,9 @@ def analyze_workouts():
     # Export to CSV with more descriptive column names
     export_df = df.copy()
     export_df['date'] = export_df['date'].astype(str)  # Convert date to string for better CSV compatibility
-    export_df.to_csv('workout_data.csv', index=False)
-    print(f"\nWorkout data exported to 'workout_data.csv'")
+    csv_path = get_output_path('workout_data.csv')
+    export_df.to_csv(csv_path, index=False)
+    print(f"\nWorkout data exported to {csv_path}")
     print(f"Exported {len(export_df)} workouts")
     
     # Display first few rows of exported data
@@ -451,7 +769,17 @@ def analyze_workouts():
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    plot_path = get_output_path('workout_plot.png')
+    try:
+        plt.savefig(plot_path)
+    except Exception:
+        pass
+    try:
+        plt.show()
+    except Exception:
+        print("(Plot saved to file; display not available)")
+    finally:
+        plt.close()
     
     # Print summary statistics
     print("\nWorkout Summary:")
@@ -461,6 +789,8 @@ def analyze_workouts():
     print(f"Total workout time: {df['duration_hours'].sum():.1f} hours")
     print(f"Total calories burned: {df['calories'].sum():.0f} kcal")
     print(f"Total distance: {df['distance_km'].sum():.1f} km")
+    print(f"CSV: {csv_path}")
+    print(f"Plot: {plot_path}")
     
     # Activity type breakdown
     print(f"\nWorkout Types:")
@@ -510,7 +840,8 @@ def analyze_with_chatgpt(csv_files):
     # Check if required data files exist and run analyses if needed
     missing_files = []
     for file_name, data_type in csv_files:
-        if not os.path.exists(file_name):
+        path = get_output_path(file_name)
+        if not os.path.exists(path):
             missing_files.append((file_name, data_type))
     
     if missing_files:
@@ -539,10 +870,11 @@ def analyze_with_chatgpt(csv_files):
                     print(f"\nGenerating {file_name} from {data_type} data...")
                     analysis_functions[file_name]()
                     # Verify the file was created
-                    if os.path.exists(file_name):
-                        print(f"✓ Successfully generated {file_name}")
+                    gen_path = get_output_path(file_name)
+                    if os.path.exists(gen_path):
+                        print(f"✓ Successfully generated {gen_path}")
                     else:
-                        print(f"✗ Failed to generate {file_name}")
+                        print(f"✗ Failed to generate {gen_path}")
         finally:
             # Restore original plt.show function
             plt.show = original_show
@@ -554,15 +886,16 @@ def analyze_with_chatgpt(csv_files):
     print("\nProcessing data files for ChatGPT analysis...")
     for file_name, data_type in csv_files:
         try:
-            if os.path.exists(file_name):
-                df = read_csv(file_name)
+            path = get_output_path(file_name)
+            if os.path.exists(path):
+                df = read_csv(path)
                 
                 # Skip empty dataframes
                 if len(df) == 0:
-                    print(f"Note: {file_name} exists but contains no data.")
+                    print(f"Note: {path} exists but contains no data.")
                     continue
                 
-                print(f"Found {data_type} data in {file_name}")
+                print(f"Found {data_type} data in {path}")
                 
                 data_summary[data_type] = {
                     'total_records': len(df),
@@ -647,7 +980,7 @@ def analyze_with_chatgpt(csv_files):
             markdown_content += analysis_content
             
             # Save to file
-            filepath = os.path.join(os.path.dirname(__file__), filename)
+            filepath = get_output_path(filename)
             with open(filepath, 'w') as f:
                 f.write(markdown_content)
             
@@ -671,7 +1004,8 @@ def analyze_with_ollama(csv_files):
         # Check if required data files exist and run analyses if needed
         missing_files = []
         for file_name, data_type in csv_files:
-            if not os.path.exists(file_name):
+            path = get_output_path(file_name)
+            if not os.path.exists(path):
                 missing_files.append((file_name, data_type))
         
         if missing_files:
@@ -700,10 +1034,11 @@ def analyze_with_ollama(csv_files):
                         print(f"\nGenerating {file_name} from {data_type} data...")
                         analysis_functions[file_name]()
                         # Verify the file was created
-                        if os.path.exists(file_name):
-                            print(f"✓ Successfully generated {file_name}")
+                        gen_path = get_output_path(file_name)
+                        if os.path.exists(gen_path):
+                            print(f"✓ Successfully generated {gen_path}")
                         else:
-                            print(f"✗ Failed to generate {file_name}")
+                            print(f"✗ Failed to generate {gen_path}")
             finally:
                 # Restore original plt.show function
                 plt.show = original_show
@@ -715,15 +1050,16 @@ def analyze_with_ollama(csv_files):
         print("\nProcessing data files...")
         for file_name, data_type in csv_files:
             try:
-                if os.path.exists(file_name):
-                    df = read_csv(file_name)
+                path = get_output_path(file_name)
+                if os.path.exists(path):
+                    df = read_csv(path)
                     
                     # Skip empty dataframes
                     if len(df) == 0:
-                        print(f"Note: {file_name} exists but contains no data.")
+                        print(f"Note: {path} exists but contains no data.")
                         continue
                     
-                    print(f"Found {data_type} data in {file_name}")
+                    print(f"Found {data_type} data in {path}")
                     
                     data_summary[data_type] = {
                         'total_records': len(df),
@@ -811,7 +1147,7 @@ def analyze_with_ollama(csv_files):
             markdown_content += analysis_content
             
             # Save to file
-            filepath = os.path.join(os.path.dirname(__file__), filename)
+            filepath = get_output_path(filename)
             with open(filepath, 'w') as f:
                 f.write(markdown_content)
             
@@ -847,7 +1183,8 @@ def analyze_with_external_ollama(csv_files):
         # Check if required data files exist and run analyses if needed
         missing_files = []
         for file_name, data_type in csv_files:
-            if not os.path.exists(file_name):
+            path = get_output_path(file_name)
+            if not os.path.exists(path):
                 missing_files.append((file_name, data_type))
         
         if missing_files:
@@ -876,10 +1213,11 @@ def analyze_with_external_ollama(csv_files):
                         print(f"\nGenerating {file_name} from {data_type} data...")
                         analysis_functions[file_name]()
                         # Verify the file was created
-                        if os.path.exists(file_name):
-                            print(f"✓ Successfully generated {file_name}")
+                        gen_path = get_output_path(file_name)
+                        if os.path.exists(gen_path):
+                            print(f"✓ Successfully generated {gen_path}")
                         else:
-                            print(f"✗ Failed to generate {file_name}")
+                            print(f"✗ Failed to generate {gen_path}")
             finally:
                 # Restore original plt.show function
                 plt.show = original_show
@@ -891,15 +1229,16 @@ def analyze_with_external_ollama(csv_files):
         print("\nProcessing data files...")
         for file_name, data_type in csv_files:
             try:
-                if os.path.exists(file_name):
-                    df = read_csv(file_name)
+                path = get_output_path(file_name)
+                if os.path.exists(path):
+                    df = read_csv(path)
                     
                     # Skip empty dataframes
                     if len(df) == 0:
-                        print(f"Note: {file_name} exists but contains no data.")
+                        print(f"Note: {path} exists but contains no data.")
                         continue
                     
-                    print(f"Found {data_type} data in {file_name}")
+                    print(f"Found {data_type} data in {path}")
                     
                     data_summary[data_type] = {
                         'total_records': len(df),
@@ -1113,7 +1452,7 @@ def analyze_with_external_ollama(csv_files):
             markdown_content += analysis_content
             
             # Save to file
-            filepath = os.path.join(os.path.dirname(__file__), filename)
+            filepath = get_output_path(filename)
             with open(filepath, 'w') as f:
                 f.write(markdown_content)
             
@@ -1140,7 +1479,7 @@ def main():
         print("10. Advanced AI Settings")
         print("11. Exit")
         
-        choice = input("Enter your choice (1-10): ")
+        choice = input("Enter your choice (1-11): ")
         
         # List of available data files and their types
         data_files = [
@@ -1152,6 +1491,11 @@ def main():
             ('workout_data.csv', 'Workout')
         ]
         
+        # Any analysis or AI option requires export.xml
+        if choice in {'1','2','3','4','5','6','7','8','9'}:
+            if not ensure_export_available():
+                continue
+
         if choice == '1':
             analyze_steps()
         elif choice == '2':
@@ -1210,6 +1554,21 @@ def check_env():
     return True
 
 if __name__ == "__main__":
+    # Parse optional CLI args for export path and output directory
+    try:
+        parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
+        parser.add_argument('-e', '--export', help='Path to export.xml or a directory containing it')
+        parser.add_argument('-o', '--out', help='Directory to write CSV/PNG/MD outputs (default: current directory or OUTPUT_DIR env)')
+        parser.add_argument('path', nargs='?', help='Optional positional path to export.xml or containing directory')
+        args = parser.parse_args()
+        chosen = args.export or args.path
+        if chosen:
+            _export_xml_path = os.path.abspath(os.path.expanduser(chosen))
+        if args.out:
+            _output_dir = os.path.abspath(os.path.expanduser(args.out))
+    except SystemExit:
+        raise
+
     check_requirements()
     if not check_env():
         print("\nContinuing without AI analysis capabilities...")

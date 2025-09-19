@@ -18,6 +18,71 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 🧠 **Local LLM Support** - Analyze data privately using Ollama models like Deepseek-R1
 - 🌐 **External LLM Support** (New!) - Connect to remote Ollama instances for analysis
 
+## ⚡ Quick Start
+
+Local (recommended for interactive charts)
+
+```bash
+# 1) Clone and enter the repo
+git clone https://github.com/krumjahn/applehealth.git
+cd applehealth
+
+# 2) Install dependencies
+pip install -r requirements.txt
+
+# 3) Run the app (you will be prompted for export.xml if omitted)
+python src/applehealth.py --export "/absolute/path/to/export.xml" --out "./health_out"
+```
+
+Docker (saves charts/CSVs to your host folder)
+
+```bash
+# 1) Build the image
+docker build -t applehealth .
+
+# 2) Run the container (quote paths with spaces)
+docker run -it \
+  -v "/absolute/path/to/export.xml":/export.xml \
+  -v "$(pwd)":/out \
+  applehealth
+```
+
+Windows (PowerShell) example
+
+```powershell
+git clone https://github.com/krumjahn/applehealth.git
+cd applehealth
+pip install -r requirements.txt
+python src/applehealth.py --export "C:\Users\you\Downloads\export.xml" --out ".\health_out"
+
+# Docker
+docker build -t applehealth .
+docker run -it `
+  -v "C:\Users\you\Downloads\export.xml:/export.xml" `
+  -v "${PWD}:/out" `
+  applehealth
+```
+
+### Makefile shortcuts (macOS/Linux)
+
+For convenience, you can use the included Makefile:
+
+```bash
+# Build the Docker image
+make docker-build
+
+# Run via Docker (set EXPORT to your export.xml, OUT is where files will be written)
+make docker-run EXPORT="/absolute/path/to/export.xml" OUT="$(pwd)"
+
+# Run locally with interactive charts
+make run-local EXPORT="/absolute/path/to/export.xml" OUT="./health_out"
+
+# Start a shell in the container (for debugging)
+make docker-run-bash EXPORT="/absolute/path/to/export.xml" OUT="$(pwd)"
+```
+
+Note: On Windows, Makefile targets require a Make tool (e.g., Git Bash + make or WSL). Otherwise use the plain docker/python commands above.
+
 ## Example A.I. analysis
 
 [Read more here](https://rumjahn.com/how-i-used-a-i-to-analyze-8-years-of-apple-health-fitness-data-to-uncover-actionable-insights/)
@@ -60,17 +125,18 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 
 1. Clone this repository:
 
-   ```
+   ```bash
    git clone https://github.com/krumjahn/applehealth.git
+   cd applehealth
    ```
 
 2. Install dependencies:
 
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-3. Set up OpenAI API key and optional Ollama configuration:
+3. Set up OpenAI API key and optional Ollama configuration (optional, only needed for AI analysis):
    - Get your OpenAI API key from [OpenAI Platform](https://platform.openai.com/)
    - Copy `.env.example` to `.env` in the project directory
    - Add your OpenAI API key and optional configuration:
@@ -109,25 +175,63 @@ Morning Consistency: Your most successful workout periods consistently occur in 
 
 ## 💻 Usage
 
-Run the script:
+You can run the tool locally (recommended for interactive charts) or via Docker (saves charts as PNGs).
+
+Local (interactive charts):
 
 ```bash
-python applehealth.py
+# From the repository root:
+python src/applehealth.py --export "/path/to/export.xml" --out "./health_out"
+
+# or change into src/ then run
+cd src
+python applehealth.py --export "/path/to/export.xml" --out "../health_out"
 ```
+
+Notes:
+- If you omit `--export`, the app will prompt you to provide the path to `export.xml` after it starts.
+- `--out` controls where CSV/PNG/MD files are written. If omitted, files are saved to the current directory.
+- On Windows, use quotes for paths with spaces, e.g. `"C:\\Users\\you\\Downloads\\export.xml"`.
 
 ## 🐳 Docker Usage
 
-1. Build the Docker image:
+Docker runs in a headless environment: charts do not pop up, but are saved as PNGs. Outputs are written to `/out` inside the container by default.
 
-   ```bash
-   docker build -t applehealth .
-   ```
+1) Build the image:
 
-2. Run the Docker container:
+```bash
+docker build -t applehealth .
+```
 
-   ```bash
-   docker run --network="host" -v $(pwd)/export.xml:/app/export.xml -it applehealth
-   ```
+2) Run the container, mounting your `export.xml` and an output directory from your host:
+
+```bash
+# macOS/Linux (paths with spaces must be quoted)
+docker run -it \
+  -v "/absolute/path/to/export.xml":/export.xml \
+  -v "$(pwd)":/out \
+  applehealth
+```
+
+Examples:
+- If your export is in Downloads with a space in the name:
+  `-v "/Users/you/Downloads/apple_health_export 2/export.xml":/export.xml`
+- Write outputs to a custom folder on host:
+  `-v "/Users/you/Desktop/health_out":/out`
+
+Windows (PowerShell):
+
+```powershell
+docker run -it `
+  -v "C:\Users\you\Downloads\export.xml:/export.xml" `
+  -v "${PWD}:/out" `
+  applehealth
+```
+
+Notes:
+- No need for `--network host` in typical use. The app only needs outbound internet if you use AI features (ChatGPT/remote Ollama). The default Docker networking is fine.
+- Inside Docker, the app auto-detects `/export.xml` and saves outputs to `/out`.
+- You can still pass flags if you prefer: `--export /export.xml --out /out`.
 
 Choose from the menu:
 
@@ -153,7 +257,9 @@ The new AI analysis feature (Option 7) will:
 - Suggest potential improvements
 - Highlight unusual findings
 
-Note: You must run at least one other analysis option first to generate the data files for AI analysis.
+Notes:
+- If you haven’t run any analysis yet, the AI options will trigger the necessary data exports automatically.
+- For ChatGPT, create a `.env` with `OPENAI_API_KEY=...` in the working directory (or pass `--env-file .env` to Docker).
 
 ### 🖥️ Local LLM Analysis
 
@@ -190,6 +296,96 @@ The external LLM analysis feature (Option 9) will:
    ```
    
 4. For external analysis, when prompted, enter the URL of your remote Ollama server
+
+## 📦 Outputs
+
+The tool writes the following per-metric outputs in the chosen output directory:
+- CSVs: `steps_data.csv`, `distance_data.csv`, `heart_rate_data.csv`, `weight_data.csv`, `sleep_data.csv`, `workout_data.csv`
+- Plots: `steps_plot.png`, `distance_plot.png`, `heart_rate_plot.png`, `weight_plot.png`, `sleep_plot.png`, `workout_plot.png`
+- AI analyses (optional): timestamped `.md` files summarizing insights
+
+On macOS/Linux, the app prints a one-line tip to open each saved plot (e.g., `open "./steps_plot.png"`).
+
+## 🆘 Troubleshooting
+
+- "export.xml not found" error:
+  - Use `--export "/absolute/path/to/export.xml"` or provide the directory containing it.
+  - In Docker, mount the file: `-v "/absolute/path/to/export.xml":/export.xml`.
+  - Paths with spaces must be quoted. On Windows, use double backslashes or quotes.
+  - The app will prompt for the path if not provided; look for "Using export file: ...".
+
+- No charts appear in Docker:
+  - Expected. Docker runs headless; charts are saved as PNGs in `/out`.
+  - Open the saved file on your host (the app prints `open "...png"`).
+  - To see interactive charts, run locally (outside Docker).
+
+- No CSV/PNG files found:
+  - Make sure you ran one of the analysis options (1–6). AI options will generate them if needed.
+  - Check the configured output directory (default: current dir locally, `/out` in Docker).
+  - Use `--out "/path/to/output"` to control where files are written.
+
+- OpenAI API key errors:
+  - Create `.env` with `OPENAI_API_KEY=...` in your working directory.
+  - In Docker, pass envs via `--env-file .env` or `-e OPENAI_API_KEY=...`.
+  - Network access is required for ChatGPT; verify your connection.
+
+- Ollama errors (local or external):
+  - Local: install Ollama, run `ollama serve`, and `ollama pull deepseek-r1`.
+  - External: set `OLLAMA_HOST=http://host:11434` or enter the URL when prompted.
+  - If external fails, the tool can fall back to local Ollama.
+
+- Paths with spaces or Windows paths:
+  - Quote paths: `"/Users/you/Downloads/apple_health_export 2/export.xml"`.
+  - Windows examples are shown for Docker (PowerShell). Use quotes for `--export` and `--out` as well.
+
+- "Is a directory" error for export.xml:
+  - This happens when Docker mounts a directory to a path expected to be a file.
+  - Use the provided commands that bind the file to `/export.xml`, or pass `--export` pointing to a valid file.
+
+- Step CSV filename confusion:
+  - The tool exports both `steps_data.csv` and a compatibility `stepsdata.csv`.
+
+- Useful env vars:
+  - `EXPORT_XML` (path to export.xml), `OUTPUT_DIR` (output folder), `OLLAMA_HOST`.
+
+## 📷 Quick Walkthrough (no images)
+
+First run (local), selecting Steps (1):
+
+```
+What would you like to analyze?
+1. Steps
+2. Distance
+3. Heart Rate
+4. Weight
+5. Sleep
+6. Workouts
+7. Analyze All Data with ChatGPT
+8. Analyze with Local LLM (Ollama)
+9. Analyze with External LLM (Ollama)
+10. Advanced AI Settings
+11. Exit
+Enter your choice (1-11): 1
+Using export file: /absolute/path/to/export.xml
+Starting to parse HKQuantityTypeIdentifierStepCount...
+XML file loaded, searching records...
+Found 240292 records
+Steps data exported to /.../health_out/steps_data.csv and compatibility file at /.../health_out/stepsdata.csv
+
+Steps Summary:
+- Date range: 2016-01-01 to 2025-01-01 (3650 days)
+- Total steps: 12,345,678
+- Average per day: 3,383 (median 2,950)
+- Best day: 2018-03-24 with 46,996 steps
+- Days ≥10k steps: 532
+- Last 7-day average: 8,421
+- CSV: /.../health_out/steps_data.csv
+- CSV (compat): /.../health_out/stepsdata.csv
+- Plot: /.../health_out/steps_plot.png
+Tip: open "/.../health_out/steps_plot.png"
+```
+
+You can add your own GIFs or screenshots by placing them under `assets/` and linking to them in this README.
 
 ## 📊 Example Output
 
