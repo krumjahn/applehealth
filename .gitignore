@@ -5,6 +5,10 @@
 *.md
 *.DS_Store
 
+# Generated analysis artifacts
+*_plot.png
+ai_prefs.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
