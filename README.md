@@ -18,6 +18,10 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 🧠 **Local LLM Support** - Analyze data privately using Ollama models like Deepseek-R1
 - 🌐 **External LLM Support** (New!) - Connect to remote Ollama instances for analysis
 
+## 📺 Youtube tutorial
+
+[Watch youtube tutorial here](https://www.youtube.com/watch?v=fkvOE9Gxwzk)
+
 ## ⚡ Quick Start
 
 Local (recommended for interactive charts)
@@ -487,4 +491,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 If you find this tool useful, please consider giving it a star ⭐️
+
 
