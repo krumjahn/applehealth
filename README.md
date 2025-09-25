@@ -20,7 +20,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 
 ## 📺 Youtube tutorial
 
-[Watch youtube tutorial here](https://www.youtube.com/watch?v=fkvOE9Gxwzk)
+[Watch youtube tutorial here](https://youtu.be/5FCFRYbXHjg)
 
 ## ⚡ Quick Start
 
@@ -491,5 +491,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 If you find this tool useful, please consider giving it a star ⭐️
+
 
 
