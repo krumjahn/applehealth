@@ -26,7 +26,7 @@ Usage:
 
 Author: Keith Rumjahn
 License: MIT
-Version: 1.0.0
+Version: 1.4.1
 """
 
 import xml.etree.ElementTree as ET
@@ -45,7 +45,8 @@ import time
 from contextlib import contextmanager
 import json
 from urllib.parse import unquote as _url_unquote
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Tuple
+import re
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -58,6 +59,7 @@ except Exception:
 # Optional user-provided path to export.xml (from CLI or prompt)
 _export_xml_path = None
 _output_dir = os.environ.get('OUTPUT_DIR')
+__version__ = "1.4.1"
 
 def get_output_dir():
     """Return the absolute output directory, creating it if needed.
@@ -219,6 +221,49 @@ def _status(msg: str):
         print(f"[{ts}] {msg}")
     except Exception:
         print(msg)
+
+# --- Ollama helpers ---
+def _extract_ollama_chunk_text(chunk: Any) -> str:
+    """Extract incremental text from an Ollama streaming chunk.
+
+    Handles both dict-style chunks and typed Response objects from the
+    `ollama` Python package. Returns '' if no text is present.
+    """
+    try:
+        # Dict-style streaming event
+        if isinstance(chunk, dict):
+            # Prefer 'response' (generate) then chat message content
+            return (
+                chunk.get('response')
+                or (chunk.get('message') or {}).get('content')
+                or ''
+            )
+        # Typed object (ollama.Response)
+        msg = getattr(chunk, 'message', None)
+        if msg is not None:
+            # message could be an object or dict; try attribute then key
+            content = getattr(msg, 'content', None)
+            if content:
+                return content
+            if isinstance(msg, dict):
+                return msg.get('content') or ''
+        # Generate stream typed objects carry 'response'
+        resp = getattr(chunk, 'response', None)
+        if resp:
+            return resp
+    except Exception:
+        pass
+    return ''
+
+def _strip_reasoning_blocks(text: str) -> str:
+    """Remove model reasoning blocks like <think>...</think> from text."""
+    if not text:
+        return text
+    try:
+        # Remove any <think>...</think> segments (greedy across newlines)
+        return re.sub(r"<think>[\s\S]*?</think>\s*", "", text, flags=re.IGNORECASE)
+    except Exception:
+        return text
 
 def reset_preferences():
     """Delete saved preferences file and clear in-memory overrides."""
@@ -398,6 +443,7 @@ def parse_health_data(file_path, record_type):
     
     print("XML file loaded, searching records...")
     
+    bad_samples = []
     for record in root.findall('.//Record'):
         if record.get('type') == record_type:
             try:
@@ -406,10 +452,189 @@ def parse_health_data(file_path, record_type):
                 dates.append(date)
                 values.append(value)
             except (ValueError, TypeError):
+                # Collect a few bad samples to aid debugging
+                if len(bad_samples) < 3:
+                    bad_samples.append({
+                        'type': record.get('type'),
+                        'value': record.get('value'),
+                        'startDate': record.get('startDate'),
+                        'endDate': record.get('endDate'),
+                        'unit': record.get('unit'),
+                        'sourceName': record.get('sourceName')
+                    })
                 continue
     
     print(f"Found {len(dates)} records")
+    # If we encountered parsing issues, persist a short debug note
+    if bad_samples:
+        try:
+            dbg_path = get_output_path(f"debug_{record_type}_parse_issues.json")
+            with open(dbg_path, 'w') as f:
+                json.dump({
+                    'record_type': record_type,
+                    'num_good': len(dates),
+                    'num_bad_samples': len(bad_samples),
+                    'bad_samples': bad_samples,
+                    'note': 'These records had non-numeric values for a quantity parser. This is normal if the type is a Category.'
+                }, f, indent=2)
+            print(f"Wrote debug sample to {dbg_path}")
+        except Exception:
+            pass
     return DataFrame({'date': dates, 'value': values})
+
+
+# --- Diagnostics & Debugging Helpers ---
+def _classify_record_type(t: str) -> str:
+    try:
+        if not t:
+            return 'unknown'
+        if t.startswith('HKQuantityTypeIdentifier'):
+            return 'quantity'
+        if t.startswith('HKCategoryTypeIdentifier'):
+            return 'category'
+        if t.startswith('HKCorrelationTypeIdentifier'):
+            return 'correlation'
+        if t.startswith('HKDataType'):
+            return 'data'
+        return 'other'
+    except Exception:
+        return 'unknown'
+
+
+def scan_export_types(file_path: str) -> Dict[str, Any]:
+    """Scan export.xml for all record/workout types and summarize.
+
+    Returns a dictionary with:
+    - totals, by_type stats, unknown_types, category_types, quantity_types
+    - examples of values for each type
+    """
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+
+    by_type: Dict[str, Dict[str, Any]] = {}
+    total_records = 0
+
+    for rec in root.findall('.//Record'):
+        t = rec.get('type') or 'UNKNOWN'
+        cls = _classify_record_type(t)
+        d1, d2 = rec.get('startDate'), rec.get('endDate')
+        v = rec.get('value')
+        total_records += 1
+        st = by_type.setdefault(t, {
+            'class': cls,
+            'count': 0,
+            'units': set(),
+            'sources': set(),
+            'bad_values': 0,
+            'value_examples': [],
+            'first_seen': None,
+            'last_seen': None,
+        })
+        st['count'] += 1
+        unit = rec.get('unit')
+        if unit:
+            st['units'].add(unit)
+        src = rec.get('sourceName')
+        if src:
+            st['sources'].add(src)
+        # Track dates
+        def _parse_dt(s: Optional[str]) -> Optional[str]:
+            try:
+                return datetime.strptime(s, '%Y-%m-%d %H:%M:%S %z').isoformat()
+            except Exception:
+                return None
+        s1 = _parse_dt(d1)
+        s2 = _parse_dt(d2)
+        for dt in [s1, s2]:
+            if not dt:
+                continue
+            if not st['first_seen'] or dt < st['first_seen']:
+                st['first_seen'] = dt
+            if not st['last_seen'] or dt > st['last_seen']:
+                st['last_seen'] = dt
+        # Samples
+        if v is not None and len(st['value_examples']) < 3:
+            st['value_examples'].append(v)
+        # Rough numeric check for quantities
+        if st['class'] == 'quantity':
+            try:
+                _ = float(v)
+            except Exception:
+                st['bad_values'] += 1
+
+    # Normalize sets
+    for t, st in by_type.items():
+        st['units'] = sorted(list(st['units']))
+        st['sources'] = sorted(list(st['sources']))
+
+    # Collect grouping
+    quantity_types = sorted([t for t, st in by_type.items() if st['class'] == 'quantity'])
+    category_types = sorted([t for t, st in by_type.items() if st['class'] == 'category'])
+    unknown_types = sorted([t for t, st in by_type.items() if st['class'] in ('other', 'unknown')])
+
+    return {
+        'app_version': __version__,
+        'python_version': sys.version,
+        'platform': sys.platform,
+        'file': os.path.abspath(file_path),
+        'file_size_bytes': os.path.getsize(file_path) if os.path.exists(file_path) else None,
+        'total_records': total_records,
+        'by_type': by_type,
+        'quantity_types': quantity_types,
+        'category_types': category_types,
+        'unknown_types': unknown_types,
+        'note': 'Category types are expected to have string values; they are not corrupt.'
+    }
+
+
+def generate_debug_reports(file_path: str) -> Tuple[str, str]:
+    """Generate JSON and Markdown debug reports to aid troubleshooting.
+
+    Returns: (json_path, md_path)
+    """
+    summary = scan_export_types(file_path)
+    out_dir = get_output_dir()
+    json_path = os.path.join(out_dir, 'health_types_report.json')
+    md_path = os.path.join(out_dir, 'health_types_report.md')
+
+    # Write JSON
+    try:
+        with open(json_path, 'w') as f:
+            json.dump(summary, f, indent=2)
+    except Exception:
+        pass
+
+    # Write Markdown
+    try:
+        lines = []
+        lines.append(f"# Apple Health Export Type Report\n")
+        lines.append(f"- App Version: {summary['app_version']}\n")
+        lines.append(f"- Python: {summary['python_version'].splitlines()[0]}\n")
+        lines.append(f"- Platform: {summary['platform']}\n")
+        lines.append(f"- File: {summary['file']} ({summary['file_size_bytes']} bytes)\n")
+        lines.append(f"- Total Records: {summary['total_records']}\n")
+        lines.append(f"\n## Quantity Types\n")
+        for t in summary['quantity_types']:
+            st = summary['by_type'][t]
+            lines.append(f"- {t}: {st['count']} records, units={st['units']}, bad_values={st['bad_values']}, examples={st['value_examples']}\n")
+        lines.append(f"\n## Category Types (expected string values)\n")
+        for t in summary['category_types']:
+            st = summary['by_type'][t]
+            lines.append(f"- {t}: {st['count']} records, examples={st['value_examples']}\n")
+        if summary['unknown_types']:
+            lines.append(f"\n## Other/Unknown Types\n")
+            for t in summary['unknown_types']:
+                st = summary['by_type'][t]
+                lines.append(f"- {t}: {st['count']} records, examples={st['value_examples']}\n")
+        lines.append("\nNote: Category and event types are not corrupt. If you’re troubleshooting, please attach this file and the JSON with your report.\n")
+        with open(md_path, 'w') as f:
+            f.write("".join(lines))
+    except Exception:
+        pass
+
+    print(f"Generated debug reports:\n- {json_path}\n- {md_path}")
+    print_open_hint(md_path)
+    return json_path, md_path
 
 def analyze_steps():
     """
@@ -1316,18 +1541,7 @@ def analyze_with_ollama(csv_files):
             print("Streaming analysis...\n")
             start_time = time.time()
             for chunk in stream:
-                text = None
-                try:
-                    # Newer streaming format: incremental text in 'response'
-                    if isinstance(chunk, dict):
-                        text = (
-                            chunk.get('response')
-                            or chunk.get('message', {}).get('content')
-                        )
-                    else:
-                        text = str(chunk)
-                except Exception:
-                    text = None
+                text = _extract_ollama_chunk_text(chunk)
                 if text:
                     collected.append(text)
                     print(text, end='', flush=True)
@@ -1366,7 +1580,8 @@ def analyze_with_ollama(csv_files):
                 markdown_content += f"- **Minimum Value:** {summary['min_value']}\n\n"
             
             markdown_content += f"## Analysis Results\n\n"
-            markdown_content += "".join(collected)
+            final_text = _strip_reasoning_blocks("".join(collected))
+            markdown_content += final_text
             
             # Save to file
             filepath = get_output_path(filename)
@@ -2147,11 +2362,13 @@ def main():
     """
     # Greet and show where outputs will be saved by default
     out_dir = get_output_dir()
-    print(f"\nOutputs will be saved to: {out_dir}")
+    print(f"\nApple Health Data Analyzer v{__version__}")
+    print(f"Outputs will be saved to: {out_dir}")
     print("Tip: You can drag-and-drop your export.xml into this window when prompted.")
     while True:
         print("\nWhat would you like to do?")
         # Core analyses
+        print("0. Diagnose Export & Generate Debug Report")
         print("1. Analyze Steps")
         print("2. Analyze Distance")
         print("3. Analyze Heart Rate")
@@ -2184,11 +2401,14 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'1','2','3','4','5','6','7','8','9','10','11','12','13'}:
+        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13'}:
             if not ensure_export_available():
                 continue
 
-        if choice == '1':
+        if choice == '0':
+            export_path = resolve_export_xml()
+            generate_debug_reports(export_path)
+        elif choice == '1':
             analyze_steps()
         elif choice == '2':
             analyze_distance()
