@@ -19,6 +19,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 🌐 **External LLM Support** (New!) - Connect to remote Ollama instances for analysis
 - 📤 XML → CSV Export (Full Dump) — export Records, Workouts, and ActivitySummary to CSV
 - 📄 XML → JSON Export (Full Dump) — export Records, Workouts, and ActivitySummary to JSON
+- 🧪 LM Studio Support — Use LM Studio's OpenAI-compatible local server for AI analysis
 
 ## 📺 Youtube tutorial
 
@@ -262,9 +263,10 @@ Choose from the menu:
 13. AI: Analyze with OpenRouter
 14. AI: Analyze with Ollama (Local)
 15. AI: Analyze with Ollama (Remote)
-16. AI Settings
-17. Reset Preferences
-18. Exit
+16. AI: Analyze with LM Studio
+17. AI Settings
+18. Reset Preferences
+19. Exit
 
 ### 🤖 AI Analysis
 
@@ -294,6 +296,20 @@ The local analysis feature (Option 8) will:
 - Use Ollama with Deepseek-R1 by default
 - Provide technical analysis of health patterns
 - No data leaves your computer
+
+### 🧪 LM Studio (OpenAI-compatible)
+
+LM Studio runs a local OpenAI-compatible server that you can point the app to.
+
+1) Install LM Studio: https://lmstudio.ai/
+2) In LM Studio, enable the local server (OpenAI-compatible) and load a model
+3) Run this app and choose option 16 (LM Studio)
+
+Environment variables (optional):
+- `LMSTUDIO_BASE_URL` (default: `http://localhost:1234/v1`)
+- `LMSTUDIO_API_KEY` (default: `lm-studio`)
+
+Tip: The app will ask for a model name; enter the exact name shown in LM Studio for the loaded model.
 
 ### 🌐 External LLM Analysis
 
@@ -387,6 +403,7 @@ AI model preferences
 
 - Useful env vars:
   - `EXPORT_XML` (path to export.xml), `OUTPUT_DIR` (output folder), `OLLAMA_HOST`.
+  - `LMSTUDIO_BASE_URL` (OpenAI-compatible server URL), `LMSTUDIO_API_KEY` (optional token)
 
 ## 📷 Quick Walkthrough (no images)
 
