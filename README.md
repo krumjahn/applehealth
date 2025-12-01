@@ -311,6 +311,8 @@ Environment variables (optional):
 
 Tip: The app will ask for a model name; enter the exact name shown in LM Studio for the loaded model.
 
+![LM Studio and Ollama Supported](assets/lm-ollama-support.png)
+
 ### 🌐 External LLM Analysis
 
 The external LLM analysis feature (Option 9) will:
