@@ -4,6 +4,8 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 
 ![Python Version](https://img.shields.io/badge/python-3.6+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Jan](https://img.shields.io/badge/Jan-Supported-brightgreen)
+![LocalAI](https://img.shields.io/badge/LocalAI-Supported-brightgreen)
 
 ## 🚀 Features
 
