@@ -318,7 +318,7 @@ Tip: The app will ask for a model name; enter the exact name shown in LM Studio 
 
 ![LM Studio and Ollama Supported](assets/lm-ollama-support.png)
 
-### 🟩 Jan (OpenAI-compatible)
+### 🟩 Jan (OpenAI-compatible) ![Jan](https://img.shields.io/badge/Jan-Supported-brightgreen?style=flat-square)
 
 Jan provides a local OpenAI-compatible server.
 
@@ -332,7 +332,7 @@ Environment variables (optional):
 
 The app will prompt for a model name; use the model name shown in Jan.
 
-### 🟦 LocalAI (OpenAI-compatible)
+### 🟦 LocalAI (OpenAI-compatible) ![LocalAI](https://img.shields.io/badge/LocalAI-Supported-brightgreen?style=flat-square)
 
 LocalAI runs a fully local OpenAI-compatible API.
 
