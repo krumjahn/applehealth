@@ -17,6 +17,8 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 🔄 WHOOP workout integration
 - 🧠 **Local LLM Support** - Analyze data privately using Ollama models like Deepseek-R1
 - 🌐 **External LLM Support** (New!) - Connect to remote Ollama instances for analysis
+- 📤 XML → CSV Export (Full Dump) — export Records, Workouts, and ActivitySummary to CSV
+- 📄 XML → JSON Export (Full Dump) — export Records, Workouts, and ActivitySummary to JSON
 
 ## 📺 Youtube tutorial
 
@@ -251,16 +253,18 @@ Choose from the menu:
 4. Analyze Weight
 5. Analyze Sleep
 6. Analyze Workouts
-7. AI: Analyze All Data (OpenAI)
-8. AI: Analyze with Claude (Anthropic)
-9. AI: Analyze with Gemini (Google)
-10. AI: Analyze with Grok (xAI)
-11. AI: Analyze with OpenRouter
-12. AI: Analyze with Ollama (Local)
-13. AI: Analyze with Ollama (Remote)
-14. AI Settings
-15. Reset Preferences
-16. Exit
+7. Convert XML → CSV (Full Dump)
+8. Convert XML → JSON (Full Dump)
+9. AI: Analyze All Data (OpenAI)
+10. AI: Analyze with Claude (Anthropic)
+11. AI: Analyze with Gemini (Google)
+12. AI: Analyze with Grok (xAI)
+13. AI: Analyze with OpenRouter
+14. AI: Analyze with Ollama (Local)
+15. AI: Analyze with Ollama (Remote)
+16. AI Settings
+17. Reset Preferences
+18. Exit
 
 ### 🤖 AI Analysis
 
@@ -324,6 +328,16 @@ The tool writes the following per-metric outputs in the chosen output directory:
 - CSVs: `steps_data.csv`, `distance_data.csv`, `heart_rate_data.csv`, `weight_data.csv`, `sleep_data.csv`, `workout_data.csv`
 - Plots: `steps_plot.png`, `distance_plot.png`, `heart_rate_plot.png`, `weight_plot.png`, `sleep_plot.png`, `workout_plot.png`
 - AI analyses (optional): timestamped `.md` files summarizing insights
+
+XML → CSV full export:
+- `records.csv` — flattened rows for all `<Record>` entries (attributes + metadata as `metadata:<key>` columns)
+- `workouts.csv` — all `<Workout>` entries (attributes + metadata)
+- `activity_summary.csv` — all `<ActivitySummary>` entries
+
+XML → JSON full export:
+- `records.json` — array of `<Record>` objects with attributes and a nested `metadata` object
+- `workouts.json` — array of `<Workout>` objects with attributes and a nested `metadata` object
+- `activity_summary.json` — array of `<ActivitySummary>` objects with attributes
 
 On macOS/Linux, the app prints a one-line tip to open each saved plot (e.g., `open "./steps_plot.png"`).
 

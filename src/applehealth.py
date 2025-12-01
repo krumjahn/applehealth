@@ -2356,6 +2356,229 @@ def analyze_with_openrouter(csv_files):
         print("- Check your network and OpenRouter API status/key.")
         print("- If it keeps hanging, rerun with a different model.")
 
+def convert_xml_to_csv():
+    """Convert Apple Health export.xml into comprehensive CSV files.
+
+    Creates three CSVs under the output directory:
+    - records.csv: All <Record> elements (flattened attributes + metadata entries)
+    - workouts.csv: All <Workout> elements (attributes + metadata)
+    - activity_summary.csv: All <ActivitySummary> elements (attributes)
+
+    Notes:
+    - Metadata entries are flattened as columns named 'metadata:<key>'.
+    - Missing columns are left blank for rows that don't have them.
+    - This aims to mirror the simple structure of common XML→CSV tools.
+    """
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
+
+    with spinner("Parsing export.xml"):
+        tree = ET.parse(export_path)
+        root = tree.getroot()
+
+    # Helper to extract metadata entries as flat dict
+    def _metadata_dict(elem):
+        out = {}
+        try:
+            for m in elem.findall('.//MetadataEntry'):
+                k = m.get('key')
+                v = m.get('value')
+                if k:
+                    out[f"metadata:{k}"] = v
+        except Exception:
+            pass
+        return out
+
+    # Collect Records
+    print("Scanning <Record> elements…")
+    record_rows = []
+    record_cols = set()
+    bad_records = 0
+    for rec in root.findall('.//Record'):
+        try:
+            row = dict(rec.attrib)
+            row.update(_metadata_dict(rec))
+            record_rows.append(row)
+            record_cols.update(row.keys())
+        except Exception:
+            bad_records += 1
+            continue
+
+    # Collect Workouts
+    print("Scanning <Workout> elements…")
+    workout_rows = []
+    workout_cols = set()
+    bad_workouts = 0
+    for w in root.findall('.//Workout'):
+        try:
+            row = dict(w.attrib)
+            row.update(_metadata_dict(w))
+            workout_rows.append(row)
+            workout_cols.update(row.keys())
+        except Exception:
+            bad_workouts += 1
+            continue
+
+    # Collect ActivitySummary
+    print("Scanning <ActivitySummary> elements…")
+    as_rows = []
+    as_cols = set()
+    for a in root.findall('.//ActivitySummary'):
+        try:
+            row = dict(a.attrib)
+            as_rows.append(row)
+            as_cols.update(row.keys())
+        except Exception:
+            continue
+
+    out_dir = get_output_dir()
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Write CSVs using pandas for convenience
+    def _write_csv(rows, cols, filename):
+        if not rows:
+            # Create empty with header if possible
+            try:
+                from pandas import DataFrame
+                DataFrame(columns=sorted(list(cols))).to_csv(os.path.join(out_dir, filename), index=False)
+            except Exception:
+                pass
+            return None
+        try:
+            from pandas import DataFrame
+            # Ensure consistent column order: common useful keys first
+            preferred = [
+                'type', 'unit', 'value', 'sourceName', 'sourceVersion', 'device',
+                'creationDate', 'startDate', 'endDate', 'workoutActivityType',
+                'duration', 'durationUnit', 'totalDistance', 'totalDistanceUnit',
+                'totalEnergyBurned', 'totalEnergyBurnedUnit', 'dateComponents'
+            ]
+            remaining = [c for c in sorted(list(cols)) if c not in preferred]
+            ordered = [c for c in preferred if c in cols] + remaining
+            df = DataFrame(rows, columns=ordered)
+            path = os.path.join(out_dir, filename)
+            df.to_csv(path, index=False)
+            return path
+        except Exception as e:
+            print(f"Failed to write {filename}: {e}")
+            return None
+
+    print("Writing CSV files…")
+    records_path = _write_csv(record_rows, record_cols, 'records.csv')
+    workouts_path = _write_csv(workout_rows, workout_cols, 'workouts.csv')
+    activity_path = _write_csv(as_rows, as_cols, 'activity_summary.csv')
+
+    print("\nXML→CSV conversion complete:")
+    print(f"- Records: {len(record_rows)} rows{f' (skipped {bad_records} malformed)' if bad_records else ''}")
+    print(f"- Workouts: {len(workout_rows)} rows{f' (skipped {bad_workouts} malformed)' if bad_workouts else ''}")
+    print(f"- Activity Summaries: {len(as_rows)} rows")
+    if records_path:
+        print(f"Saved: {records_path}")
+    if workouts_path:
+        print(f"Saved: {workouts_path}")
+    if activity_path:
+        print(f"Saved: {activity_path}")
+    # Print quick-open tip for convenience
+    if records_path:
+        print_open_hint(records_path)
+
+def convert_xml_to_json():
+    """Convert Apple Health export.xml into JSON files.
+
+    Creates three JSON files under the output directory:
+    - records.json: All <Record> elements (attributes + metadata nested)
+    - workouts.json: All <Workout> elements (attributes + metadata nested)
+    - activity_summary.json: All <ActivitySummary> elements (attributes only)
+
+    Notes:
+    - Metadata entries are grouped under a 'metadata' object where keys are the
+      MetadataEntry 'key' values and values are the corresponding 'value'.
+    - This complements the CSV exporter with a more structured JSON format.
+    """
+    export_path = resolve_export_xml()
+    print(f"Using export file: {export_path}")
+
+    with spinner("Parsing export.xml"):
+        tree = ET.parse(export_path)
+        root = tree.getroot()
+
+    def _metadata_obj(elem):
+        md = {}
+        try:
+            for m in elem.findall('.//MetadataEntry'):
+                k = m.get('key')
+                v = m.get('value')
+                if k is not None:
+                    md[k] = v
+        except Exception:
+            pass
+        return md or None
+
+    # Records
+    print("Scanning <Record> elements…")
+    records = []
+    for rec in root.findall('.//Record'):
+        try:
+            row = dict(rec.attrib)
+            md = _metadata_obj(rec)
+            if md is not None:
+                row['metadata'] = md
+            records.append(row)
+        except Exception:
+            continue
+
+    # Workouts
+    print("Scanning <Workout> elements…")
+    workouts = []
+    for w in root.findall('.//Workout'):
+        try:
+            row = dict(w.attrib)
+            md = _metadata_obj(w)
+            if md is not None:
+                row['metadata'] = md
+            workouts.append(row)
+        except Exception:
+            continue
+
+    # ActivitySummary
+    print("Scanning <ActivitySummary> elements…")
+    summaries = []
+    for a in root.findall('.//ActivitySummary'):
+        try:
+            summaries.append(dict(a.attrib))
+        except Exception:
+            continue
+
+    out_dir = get_output_dir()
+    os.makedirs(out_dir, exist_ok=True)
+
+    def _write_json(obj, filename):
+        path = os.path.join(out_dir, filename)
+        try:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(obj, f, ensure_ascii=False, indent=2)
+            return path
+        except Exception as e:
+            print(f"Failed to write {filename}: {e}")
+            return None
+
+    print("Writing JSON files…")
+    rec_path = _write_json(records, 'records.json')
+    w_path = _write_json(workouts, 'workouts.json')
+    as_path = _write_json(summaries, 'activity_summary.json')
+
+    print("\nXML→JSON conversion complete:")
+    print(f"- Records: {len(records)}")
+    print(f"- Workouts: {len(workouts)}")
+    print(f"- Activity Summaries: {len(summaries)}")
+    if rec_path:
+        print(f"Saved: {rec_path}")
+        print_open_hint(rec_path)
+    if w_path:
+        print(f"Saved: {w_path}")
+    if as_path:
+        print(f"Saved: {as_path}")
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -2375,20 +2598,22 @@ def main():
         print("4. Analyze Weight")
         print("5. Analyze Sleep")
         print("6. Analyze Workouts")
+        print("7. Convert XML → CSV (Full Dump)")
+        print("8. Convert XML → JSON (Full Dump)")
         # AI analyses
-        print("7. AI: Analyze All Data (OpenAI)")
-        print("8. AI: Analyze with Claude (Anthropic)")
-        print("9. AI: Analyze with Gemini (Google)")
-        print("10. AI: Analyze with Grok (xAI)")
-        print("11. AI: Analyze with OpenRouter")
-        print("12. AI: Analyze with Ollama (Local)")
-        print("13. AI: Analyze with Ollama (Remote)")
+        print("9. AI: Analyze All Data (OpenAI)")
+        print("10. AI: Analyze with Claude (Anthropic)")
+        print("11. AI: Analyze with Gemini (Google)")
+        print("12. AI: Analyze with Grok (xAI)")
+        print("13. AI: Analyze with OpenRouter")
+        print("14. AI: Analyze with Ollama (Local)")
+        print("15. AI: Analyze with Ollama (Remote)")
         # Settings and exit
-        print("14. AI Settings")
-        print("15. Reset Preferences")
-        print("16. Exit")
-        
-        choice = input("Enter your choice (1-16): ")
+        print("16. AI Settings")
+        print("17. Reset Preferences")
+        print("18. Exit")
+
+        choice = input("Enter your choice (0-18): ")
         
         # List of available data files and their types
         data_files = [
@@ -2401,7 +2626,7 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13'}:
+        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'}:
             if not ensure_export_available():
                 continue
 
@@ -2421,20 +2646,24 @@ def main():
         elif choice == '6':
             analyze_workouts()
         elif choice == '7':
-            analyze_with_chatgpt(data_files)
+            convert_xml_to_csv()
         elif choice == '8':
-            analyze_with_claude(data_files)
+            convert_xml_to_json()
         elif choice == '9':
-            analyze_with_gemini(data_files)
+            analyze_with_chatgpt(data_files)
         elif choice == '10':
-            analyze_with_grok(data_files)
+            analyze_with_claude(data_files)
         elif choice == '11':
-            analyze_with_openrouter(data_files)
+            analyze_with_gemini(data_files)
         elif choice == '12':
-            analyze_with_ollama(data_files)
+            analyze_with_grok(data_files)
         elif choice == '13':
-            analyze_with_external_ollama(data_files)
+            analyze_with_openrouter(data_files)
         elif choice == '14':
+            analyze_with_ollama(data_files)
+        elif choice == '15':
+            analyze_with_external_ollama(data_files)
+        elif choice == '16':
             print("\nAI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -2444,13 +2673,13 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '15':
+        elif choice == '17':
             confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
             if confirm in ('y', 'yes'):
                 reset_preferences()
             else:
                 print("Cancelled.")
-        elif choice == '16':
+        elif choice == '18':
             print("Goodbye!")
             break
         else:
