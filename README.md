@@ -350,6 +350,8 @@ XML → CSV full export:
 - `workouts.csv` — all `<Workout>` entries (attributes + metadata)
 - `activity_summary.csv` — all `<ActivitySummary>` entries
 
+![XML to CSV](assets/xml-csv-logo.png)
+
 XML → JSON full export:
 - `records.json` — array of `<Record>` objects with attributes and a nested `metadata` object
 - `workouts.json` — array of `<Workout>` objects with attributes and a nested `metadata` object
