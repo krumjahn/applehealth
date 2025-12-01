@@ -302,7 +302,7 @@ The local analysis feature (Option 8) will:
 - Provide technical analysis of health patterns
 - No data leaves your computer
 
-### 🧪 LM Studio (OpenAI-compatible)
+### 🧪 LM Studio (OpenAI-compatible) ![LM Studio](https://img.shields.io/badge/LM%20Studio-Supported-brightgreen?style=flat-square)
 
 LM Studio runs a local OpenAI-compatible server that you can point the app to.
 
