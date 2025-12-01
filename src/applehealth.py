@@ -2461,6 +2461,149 @@ def analyze_with_lmstudio(csv_files):
     except Exception as e:
         print(f"Error during LM Studio analysis: {e}")
 
+def _analyze_with_openai_compatible(csv_files, provider_name: str, base_url_env: str, api_key_env: str, default_base_url: str, default_api_key: str, default_model_hint: str, save_prefix: str):
+    """Generic analyzer for OpenAI-compatible local servers.
+
+    - provider_name: Display name, e.g., 'Jan', 'LocalAI'
+    - base_url_env: Environment variable for base URL
+    - api_key_env: Environment variable for API key
+    - default_base_url: Fallback base URL if env not set
+    - default_api_key: Fallback API key if env not set
+    - default_model_hint: Hint string for model selection prompt
+    - save_prefix: File prefix when saving analysis markdown
+    """
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+
+    base_url = os.environ.get(base_url_env, default_base_url)
+    api_key = os.environ.get(api_key_env, default_api_key)
+    model_name = _prompt_model_name(
+        f"{provider_name.lower()}_model",
+        'default',
+        provider_name,
+        default_model_hint
+    )
+    _status(f"Using {provider_name} at {base_url} with model: {model_name}")
+
+    try:
+        client = openai.OpenAI(api_key=api_key, base_url=base_url, timeout=60.0, max_retries=1)
+
+        try:
+            with spinner(f"Checking {provider_name} models"):
+                _ = client.models.list()
+        except Exception:
+            _status("Could not list models; continuing anyway…")
+
+        _status(f"Preparing request and contacting {provider_name}…")
+        with spinner(f"Contacting {provider_name}"):
+            stream = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=2000,
+                stream=True,
+            )
+
+        print("Streaming analysis...\n")
+        collected = []
+        start_time = time.time()
+        try:
+            for chunk in stream:
+                try:
+                    delta = chunk.choices[0].delta
+                    piece = getattr(delta, 'content', None)
+                    if piece:
+                        collected.append(piece)
+                        print(piece, end='', flush=True)
+                except Exception:
+                    delta = chunk.get('choices', [{}])[0].get('delta', {}) if isinstance(chunk, dict) else {}
+                    piece = delta.get('content')
+                    if piece:
+                        collected.append(piece)
+                        print(piece, end='', flush=True)
+        except KeyboardInterrupt:
+            print("\n(User cancelled streaming)\n")
+        except Exception as stream_err:
+            print(f"\nStreaming interrupted: {stream_err}\nFalling back to non-streaming request...")
+            with spinner("Waiting for response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+            content = resp.choices[0].message.content
+            collected.append(content)
+            print(content)
+
+        if len(collected) == 0:
+            _status("No streamed content received; requesting non-stream response...")
+            with spinner("Waiting for response"):
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a health data analyst with strong technical skills."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+            content = resp.choices[0].message.content or ''
+            if content:
+                collected.append(content)
+                print(content)
+
+        print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        final_text = "".join(collected)
+        _prompt_and_save_analysis(final_text, provider_name, f"health_analysis_{save_prefix}")
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
+    except Exception as e:
+        print(f"Error during {provider_name} analysis: {e}")
+
+def analyze_with_jan(csv_files):
+    """Analyze using Jan (getjan.ai) OpenAI-compatible local server.
+
+    Env:
+    - JAN_BASE_URL (default: http://localhost:1337/v1)
+    - JAN_API_KEY (default: jan)
+    """
+    return _analyze_with_openai_compatible(
+        csv_files,
+        provider_name='Jan',
+        base_url_env='JAN_BASE_URL',
+        api_key_env='JAN_API_KEY',
+        default_base_url='http://localhost:1337/v1',
+        default_api_key='jan',
+        default_model_hint='Enter the model name loaded in Jan',
+        save_prefix='jan'
+    )
+
+def analyze_with_localai(csv_files):
+    """Analyze using LocalAI OpenAI-compatible server.
+
+    Env:
+    - LOCALAI_BASE_URL (default: http://localhost:8080/v1)
+    - LOCALAI_API_KEY (default: local-ai)
+    """
+    return _analyze_with_openai_compatible(
+        csv_files,
+        provider_name='LocalAI',
+        base_url_env='LOCALAI_BASE_URL',
+        api_key_env='LOCALAI_API_KEY',
+        default_base_url='http://localhost:8080/v1',
+        default_api_key='local-ai',
+        default_model_hint='Enter the model name available on LocalAI',
+        save_prefix='localai'
+    )
+
 def convert_xml_to_csv():
     """Convert Apple Health export.xml into comprehensive CSV files.
 
@@ -2714,12 +2857,14 @@ def main():
         print("14. AI: Analyze with Ollama (Local)")
         print("15. AI: Analyze with Ollama (Remote)")
         print("16. AI: Analyze with LM Studio")
+        print("17. AI: Analyze with Jan")
+        print("18. AI: Analyze with LocalAI")
         # Settings and exit
-        print("17. AI Settings")
-        print("18. Reset Preferences")
-        print("19. Exit")
+        print("19. AI Settings")
+        print("20. Reset Preferences")
+        print("21. Exit")
 
-        choice = input("Enter your choice (0-19): ")
+        choice = input("Enter your choice (0-21): ")
         
         # List of available data files and their types
         data_files = [
@@ -2732,7 +2877,7 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'}:
+        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18'}:
             if not ensure_export_available():
                 continue
 
@@ -2772,6 +2917,10 @@ def main():
         elif choice == '16':
             analyze_with_lmstudio(data_files)
         elif choice == '17':
+            analyze_with_jan(data_files)
+        elif choice == '18':
+            analyze_with_localai(data_files)
+        elif choice == '19':
             print("\nAI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -2781,13 +2930,13 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '18':
+        elif choice == '20':
             confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
             if confirm in ('y', 'yes'):
                 reset_preferences()
             else:
                 print("Cancelled.")
-        elif choice == '19':
+        elif choice == '21':
             print("Goodbye!")
             break
         else:

@@ -20,6 +20,7 @@ A Python tool that transforms Apple Health export data into insightful visualiza
 - 📤 XML → CSV Export (Full Dump) — export Records, Workouts, and ActivitySummary to CSV
 - 📄 XML → JSON Export (Full Dump) — export Records, Workouts, and ActivitySummary to JSON
 - 🧪 LM Studio Support — Use LM Studio's OpenAI-compatible local server for AI analysis
+- 🟩 Jan & LocalAI Support — Use Jan (getjan.ai) and LocalAI via OpenAI-compatible APIs
 
 ## 📺 Youtube tutorial
 
@@ -264,9 +265,11 @@ Choose from the menu:
 14. AI: Analyze with Ollama (Local)
 15. AI: Analyze with Ollama (Remote)
 16. AI: Analyze with LM Studio
-17. AI Settings
-18. Reset Preferences
-19. Exit
+17. AI: Analyze with Jan
+18. AI: Analyze with LocalAI
+19. AI Settings
+20. Reset Preferences
+21. Exit
 
 ### 🤖 AI Analysis
 
@@ -312,6 +315,32 @@ Environment variables (optional):
 Tip: The app will ask for a model name; enter the exact name shown in LM Studio for the loaded model.
 
 ![LM Studio and Ollama Supported](assets/lm-ollama-support.png)
+
+### 🟩 Jan (OpenAI-compatible)
+
+Jan provides a local OpenAI-compatible server.
+
+1) Install Jan: https://getjan.ai/
+2) Start Jan and enable the API server; load a model
+3) Run this app and choose option 17 (Jan)
+
+Environment variables (optional):
+- `JAN_BASE_URL` (default: `http://localhost:1337/v1`)
+- `JAN_API_KEY` (default: `jan`)
+
+The app will prompt for a model name; use the model name shown in Jan.
+
+### 🟦 LocalAI (OpenAI-compatible)
+
+LocalAI runs a fully local OpenAI-compatible API.
+
+1) Install LocalAI: https://github.com/mudler/localai
+2) Start LocalAI and place/download models per its docs
+3) Run this app and choose option 18 (LocalAI)
+
+Environment variables (optional):
+- `LOCALAI_BASE_URL` (default: `http://localhost:8080/v1`)
+- `LOCALAI_API_KEY` (default: `local-ai`)
 
 ### 🌐 External LLM Analysis
 
@@ -408,6 +437,8 @@ AI model preferences
 - Useful env vars:
   - `EXPORT_XML` (path to export.xml), `OUTPUT_DIR` (output folder), `OLLAMA_HOST`.
   - `LMSTUDIO_BASE_URL` (OpenAI-compatible server URL), `LMSTUDIO_API_KEY` (optional token)
+  - `JAN_BASE_URL`, `JAN_API_KEY`
+  - `LOCALAI_BASE_URL`, `LOCALAI_API_KEY`
 
 ## 📷 Quick Walkthrough (no images)
 
