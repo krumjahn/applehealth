@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Simple runner: creates/uses a local venv, installs deps, then runs the app.
+# Usage examples:
+#   ./run                      # prompt for export.xml, writes to ./health_out
+#   ./run --export /abs/export.xml --out ./health_out
+#   VENV_DIR=.venv ./run       # override venv dir (default auto-detect)
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd -P)"
+cd "$PROJECT_ROOT"
+
+# Choose venv dir: prefer existing one; default to ./.venv
+DEFAULT_VENV=".venv"
+ALT_VENV="venv"
+VENV_DIR="${VENV_DIR:-}"
+if [[ -z "${VENV_DIR}" ]]; then
+  if [[ -d "$ALT_VENV" && -x "$ALT_VENV/bin/python" ]]; then
+    VENV_DIR="$ALT_VENV"
+  else
+    VENV_DIR="$DEFAULT_VENV"
+  fi
+fi
+
+PY="$VENV_DIR/bin/python"
+PIP="$VENV_DIR/bin/pip"
+
+if [[ ! -x "$PY" ]]; then
+  echo "[setup] Creating virtual environment at '$VENV_DIR'" >&2
+  python3 -m venv "$VENV_DIR"
+fi
+
+echo "[setup] Using Python: $PY" >&2
+
+# Ensure pip/setuptools/wheel are recent enough, then install deps
+echo "[setup] Upgrading pip/setuptools/wheel" >&2
+"$PY" -m pip install --upgrade pip setuptools wheel >/dev/null
+
+echo "[setup] Installing dependencies from requirements.txt" >&2
+"$PIP" install -r requirements.txt
+
+echo "[run] Launching app" >&2
+exec "$PY" src/applehealth.py "$@"
+

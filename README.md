@@ -37,14 +37,25 @@ Local (recommended for interactive charts)
 git clone https://github.com/krumjahn/applehealth.git
 cd applehealth
 
-# 2) Install dependencies
-pip install -r requirements.txt
+# 2) Easiest: auto-venv + run (prompts for export.xml)
+./run
 
-# 3) Run the app (you'll be prompted for export.xml; outputs go to ./health_out)
-python src/applehealth.py
+# Optional: pass paths explicitly
+# ./run --export "/absolute/path/to/export.xml" --out "./health_out"
 
-# Optional: Advanced flags if you already know the paths
-# python src/applehealth.py --export "/absolute/path/to/export.xml" --out "./health_out"
+# Or use Make (macOS/Linux)
+make run                       # prompts for export.xml
+make run EXPORT="/abs/export.xml" OUT="./health_out"
+```
+
+If you see `zsh: permission denied: ./run` on macOS/Linux:
+
+```bash
+chmod +x run        # make the script executable
+./run               # try again
+
+# or run without changing permissions
+bash ./run
 ```
 
 Docker (saves charts/CSVs to your host folder)
@@ -193,16 +204,17 @@ You can run the tool locally (recommended for interactive charts) or via Docker 
 Local (interactive charts):
 
 ```bash
-# From the repository root (simplest):
-python src/applehealth.py
+# Simplest: auto-venv runner
+./run
 
-# or change into src/ then run
-cd src
-python applehealth.py
-
-# Optional: if you already know the paths, you can specify them
-# python src/applehealth.py --export "/path/to/export.xml" --out "./health_out"
+# Manual (if you prefer):
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python src/applehealth.py  # or: python src/applehealth.py --export "/path/to/export.xml" --out "./health_out"
 ```
+
+Note for macOS/Homebrew users: if `pip install -r requirements.txt` shows "externally-managed-environment" (PEP 668), the `./run` script avoids this by using a local virtual environment automatically.
 
 Notes:
 - If you omit `--export`, the app will prompt you for the path (you can drag-and-drop the file or folder).
