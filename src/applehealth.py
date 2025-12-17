@@ -59,7 +59,7 @@ except Exception:
 # Optional user-provided path to export.xml (from CLI or prompt)
 _export_xml_path = None
 _output_dir = os.environ.get('OUTPUT_DIR')
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 
 def get_output_dir():
     """Return the absolute output directory, creating it if needed.
