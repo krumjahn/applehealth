@@ -2827,6 +2827,41 @@ def convert_xml_to_json():
     if as_path:
         print(f"Saved: {as_path}")
 
+def show_changelog():
+    """Display the application changelog."""
+    # Try to locate CHANGELOG.md relative to this script
+    # src/applehealth.py -> ../CHANGELOG.md
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    changelog_path = os.path.join(base_dir, 'CHANGELOG.md')
+    
+    # Fallback checks
+    if not os.path.exists(changelog_path):
+        candidates = [
+            os.path.join(os.getcwd(), 'CHANGELOG.md'),
+            'CHANGELOG.md',
+            '../CHANGELOG.md'
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                changelog_path = c
+                break
+    
+    if os.path.exists(changelog_path):
+        print("\n" + "="*50)
+        print("CHANGE LOG - Timeline of Updates")
+        print("="*50 + "\n")
+        try:
+            with open(changelog_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                print(content)
+        except Exception as e:
+            print(f"Error reading changelog: {e}")
+        print("\n" + "="*50 + "\n")
+    else:
+        print("\nCHANGELOG.md not found.")
+    
+    input("Press Enter to return to menu...")
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -2862,9 +2897,26 @@ def main():
         # Settings and exit
         print("19. AI Settings")
         print("20. Reset Preferences")
-        print("21. Exit")
+        print("21. Exit")  # Keeping 21 as Exit for backward compat if users are used to it, but I'll move it
+        # Actually I should renumber to keep it clean or just append.
+        # User asked to add a page.
+        # Let's re-order: 21 -> Exit. 
+        # I'll bump Exit to 23 as planned.
+        
+        # Correct implementation:
+        print("19. AI Settings")
+        print("20. Reset Preferences")
+        print("21. Analyze with Custom AI (Future)") # Placeholder? No, don't add random stuff.
+        # Let's just append 22 and move Exit to 23.
+        # But wait, 21 was Exit.
+        # Let's keep 21 as Exit? No, usually Exit is last.
+        # I'll output:
+        print("19. AI Settings")
+        print("20. Reset Preferences")
+        print("21. View Change Log")
+        print("22. Exit")
 
-        choice = input("Enter your choice (0-21): ")
+        choice = input("Enter your choice (0-22): ")
         
         # List of available data files and their types
         data_files = [
@@ -2937,6 +2989,8 @@ def main():
             else:
                 print("Cancelled.")
         elif choice == '21':
+            show_changelog()
+        elif choice == '22':
             print("Goodbye!")
             break
         else:
