@@ -1,0 +1,20 @@
+{
+  "requiredSmartRingMetricIdentifiers": [
+    "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+    "HKQuantityTypeIdentifierRespiratoryRate",
+    "HKQuantityTypeIdentifierOxygenSaturation",
+    "HKQuantityTypeIdentifierRestingHeartRate",
+    "HKQuantityTypeIdentifierHeartRate",
+    "HKCategoryTypeIdentifierSleepAnalysis"
+  ],
+  "requiredSchemaMappings": [
+    "smart_ring_metrics_data.csv",
+    "smart_ring_daily_summary.csv",
+    "smart_ring_weekly_summary.csv",
+    "smart_ring_hrv_trends.png",
+    "smart_ring_respiratory_rate_trends.png",
+    "smart_ring_oxygen_saturation_trends.png",
+    "smart_ring_sleep_stage_distribution.png",
+    "smart_ring_resting_heart_rate_trends.png"
+  ]
+}

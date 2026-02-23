@@ -1,0 +1,14 @@
+# Progress Log — Run 0653d8e6-574c-4db6-9ddf-6c5538409cb1
+
+## Story SR-01: Define smart ring metric schema additions
+
+- Pulled latest from remote branch attempt: `git pull --rebase --autostash origin feature/smart-ring-metrics-support` failed because remote ref does not exist.
+- Implemented schema updates in `schema.json` for smart ring metrics and outputs.
+- Added fixture-driven schema tests under `tests/`.
+- Verified schema JSON parse, typecheck-style compile pass, and unit tests pass.
+
+## Codebase Patterns
+
+- Keep schema expectations in a fixture file (`tests/fixtures/*.json`) so schema evolution can be validated by tests with minimal churn.
+- Validate contract presence using subset checks instead of exact equality to allow additive schema growth without breaking tests.
+- For repositories without mypy/pyright configured, use `python3 -m compileall src tests` as a lightweight type/syntax safety gate.

@@ -2,7 +2,7 @@
   "$schema": "https://schema.org/SoftwareApplication",
   "name": "Apple Health Data Analyzer",
   "author": "Keith Rumjahn",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Parser and AI analyzer for Apple Health export.xml files.",
   "dataInput": {
     "format": "XML",
@@ -10,29 +10,91 @@
     "keyElements": [
       {
         "name": "Record",
-        "attributes": ["type", "unit", "value", "sourceName", "startDate", "endDate"],
-        "examples": ["HKQuantityTypeIdentifierStepCount", "HKQuantityTypeIdentifierHeartRate"]
+        "attributes": [
+          "type",
+          "unit",
+          "value",
+          "sourceName",
+          "startDate",
+          "endDate"
+        ],
+        "examples": [
+          "HKQuantityTypeIdentifierStepCount",
+          "HKQuantityTypeIdentifierHeartRate",
+          "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+          "HKQuantityTypeIdentifierRespiratoryRate",
+          "HKQuantityTypeIdentifierOxygenSaturation",
+          "HKQuantityTypeIdentifierRestingHeartRate"
+        ]
       },
       {
         "name": "Workout",
-        "attributes": ["workoutActivityType", "duration", "durationUnit", "startDate", "endDate"]
+        "attributes": [
+          "workoutActivityType",
+          "duration",
+          "durationUnit",
+          "startDate",
+          "endDate"
+        ]
       },
       {
         "name": "ActivitySummary",
-        "attributes": ["dateComponents", "activeEnergyBurned", "appleExerciseTime", "appleStandHours"]
+        "attributes": [
+          "dateComponents",
+          "activeEnergyBurned",
+          "appleExerciseTime",
+          "appleStandHours"
+        ]
+      },
+      {
+        "name": "CategoryRecord",
+        "attributes": [
+          "type",
+          "value",
+          "sourceName",
+          "startDate",
+          "endDate"
+        ],
+        "examples": [
+          "HKCategoryTypeIdentifierSleepAnalysis"
+        ]
       }
+    ],
+    "smartRingMetricIdentifiers": [
+      "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
+      "HKQuantityTypeIdentifierRespiratoryRate",
+      "HKQuantityTypeIdentifierOxygenSaturation",
+      "HKQuantityTypeIdentifierRestingHeartRate",
+      "HKQuantityTypeIdentifierHeartRate",
+      "HKCategoryTypeIdentifierSleepAnalysis"
     ]
   },
   "dataOutput": {
-    "formats": ["CSV", "JSON", "PNG"],
+    "formats": [
+      "CSV",
+      "JSON",
+      "PNG"
+    ],
     "schemaMapping": {
       "steps_data.csv": "Daily sum of step counts",
       "heart_rate_data.csv": "Daily average heart rate",
-      "workout_data.csv": "Flattened workout history with durations and calories"
+      "workout_data.csv": "Flattened workout history with durations and calories",
+      "smart_ring_metrics_data.csv": "Timestamp-level smart ring metrics including HRV, respiratory rate, oxygen saturation, resting heart rate, heart rate, and sleep stages",
+      "smart_ring_daily_summary.csv": "Daily aggregate smart ring metrics for recovery and readiness analysis",
+      "smart_ring_weekly_summary.csv": "Weekly rollup of smart ring metrics to reveal trend-level changes",
+      "smart_ring_hrv_trends.png": "HRV trend visualization for smart ring recovery signals",
+      "smart_ring_respiratory_rate_trends.png": "Respiratory rate trend visualization for recovery and strain changes",
+      "smart_ring_oxygen_saturation_trends.png": "Blood oxygen saturation trend visualization for nightly and baseline checks",
+      "smart_ring_sleep_stage_distribution.png": "Sleep stage distribution visualization derived from Apple Health sleep analysis records",
+      "smart_ring_resting_heart_rate_trends.png": "Resting heart rate trend visualization for readiness and stress baselines"
     }
   },
   "aiAgentGuidance": {
-    "preferredModels": ["deepseek-r1", "gpt-4o", "claude-3-5-sonnet"],
+    "preferredModels": [
+      "deepseek-r1",
+      "gpt-4o",
+      "claude-3-5-sonnet"
+    ],
     "usage": "Use the --export flag to point to the local export.xml. Processed CSVs are stored in ./health_out/ by default. Use these CSVs for statistical analysis and health recommendations."
   }
 }
