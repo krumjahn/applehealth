@@ -56,6 +56,27 @@ git clone https://github.com/krumjahn/applehealth.git && cd applehealth
 3. Call `python src/applehealth.py --export ./export.xml --out ./analysis` to generate the CSV datasets.
 4. Read the resulting `.csv` files to provide personalized medical/fitness coaching.
 
+## 🦞 OpenClaw Support
+
+This repo now includes a dedicated OpenClaw workflow under:
+
+```text
+skills/apple-health-export-analyzer
+```
+
+That skill includes concrete scripts for:
+- verifying the local repo and `export.xml` setup
+- generating a daily Apple Health brief
+- comparing recent step and sleep trends
+- generating a weekly summary
+
+Example:
+
+```bash
+python skills/apple-health-export-analyzer/scripts/check_setup.py --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis
+python skills/apple-health-export-analyzer/scripts/daily_brief.py --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis
+```
+
 ## 📋 Requirements & Tech Stack
 - **Language**: Python 3.6+
 - **Data**: Pandas, XML.ElementTree

@@ -1,0 +1,3 @@
+display_name: Apple Health Export Analyzer
+short_description: Analyze Apple Health export.xml files with the open-source applehealth repo and generate OpenClaw-friendly daily briefs and trend summaries.
+default_prompt: Give me my latest Apple Health daily brief and 3 suggestions.
