@@ -2862,6 +2862,31 @@ def show_changelog():
     
     input("Press Enter to return to menu...")
 
+def show_openclaw_guide():
+    """Display the OpenClaw setup guide for this repo."""
+    print("\n" + "=" * 50)
+    print("🦞 OPENCLAW SETUP GUIDE")
+    print("=" * 50 + "\n")
+    print("This repo supports OpenClaw through the published skill:")
+    print("https://clawhub.ai/krumjahn/apple-health-export-analyzer\n")
+    print("How to use it:")
+    print("1. Install or clone this repo:")
+    print("   git clone https://github.com/krumjahn/applehealth.git")
+    print("2. Put your Apple Health export.xml somewhere accessible.")
+    print("3. Install the OpenClaw skill from ClawHub.")
+    print("4. Use prompts like:")
+    print('   - Use the Apple Health Export Analyzer skill. Verify my setup and give me my latest daily health brief with 3 suggestions.')
+    print('   - Use the Apple Health Export Analyzer skill. Compare my steps and sleep over the last 7 days.')
+    print('   - Use the Apple Health Export Analyzer skill. Generate a weekly summary from my Apple Health export.')
+    print("\nLocal skill workflow in this repo:")
+    print("skills/apple-health-export-analyzer")
+    print("\nUseful scripts:")
+    print("  python skills/apple-health-export-analyzer/scripts/check_setup.py --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis")
+    print("  python skills/apple-health-export-analyzer/scripts/daily_brief.py --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis")
+    print("\nTip: Read the README for the latest OpenClaw link and examples.")
+    print("\n" + "=" * 50 + "\n")
+    input("Press Enter to return to menu...")
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -2898,29 +2923,14 @@ def main():
         print("16. AI: Analyze with LM Studio")
         print("17. AI: Analyze with Jan")
         print("18. AI: Analyze with LocalAI")
-        # Settings and exit
-        print("19. AI Settings")
-        print("20. Reset Preferences")
-        print("21. Exit")  # Keeping 21 as Exit for backward compat if users are used to it, but I'll move it
-        # Actually I should renumber to keep it clean or just append.
-        # User asked to add a page.
-        # Let's re-order: 21 -> Exit. 
-        # I'll bump Exit to 23 as planned.
-        
-        # Correct implementation:
-        print("19. AI Settings")
-        print("20. Reset Preferences")
-        print("21. Analyze with Custom AI (Future)") # Placeholder? No, don't add random stuff.
-        # Let's just append 22 and move Exit to 23.
-        # But wait, 21 was Exit.
-        # Let's keep 21 as Exit? No, usually Exit is last.
-        # I'll output:
+        # Settings and help
         print("19. AI Settings")
         print("20. Reset Preferences")
         print("21. View Change Log")
-        print("22. Exit")
+        print("22. OpenClaw Setup Guide")
+        print("23. Exit")
 
-        choice = input("Enter your choice (0-22): ")
+        choice = input("Enter your choice (0-23): ")
         
         # List of available data files and their types
         data_files = [
@@ -2995,6 +3005,8 @@ def main():
         elif choice == '21':
             show_changelog()
         elif choice == '22':
+            show_openclaw_guide()
+        elif choice == '23':
             print("Goodbye!")
             break
         else:
