@@ -6,6 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![DeepSeek-R1 Supported](https://img.shields.io/badge/DeepSeek--R1-Local%20AI-blueviolet)](https://ollama.com/library/deepseek-r1)
+[![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-ff6b35.svg)](https://clawhub.ai/krumjahn/apple-health-export-analyzer)
 
 ---
 
@@ -49,6 +50,29 @@ git clone https://github.com/krumjahn/applehealth.git && cd applehealth
 2. Run `ollama pull deepseek-r1`.
 3. Launch this tool and select **Option 8 (Local LLM)**.
 
+## 🦞 OpenClaw Support
+
+This repo now has a published OpenClaw skill:
+
+**[Install from ClawHub: Apple Health Export Analyzer](https://clawhub.ai/krumjahn/apple-health-export-analyzer)**
+
+Use it if you want OpenClaw to:
+- verify your Apple Health export setup
+- generate a daily health brief from `export.xml`
+- compare your steps and sleep over the last 7 days
+- create a weekly summary with workouts and heart rate context
+- help you set up a recurring daily health message
+
+Example prompts:
+
+```text
+Use the Apple Health Export Analyzer skill. Verify my setup and give me my latest daily health brief with 3 suggestions.
+
+Use the Apple Health Export Analyzer skill. Compare my steps and sleep over the last 7 days.
+
+Use the Apple Health Export Analyzer skill. Generate a weekly summary from my Apple Health export.
+```
+
 ## 🤖 Instructions for AI Agents
 *If you are an AI Agent (Claude Code, Windsurf, OpenClaw) helping a user analyze health data:*
 1. Clone this repo into the user's workspace.
@@ -56,15 +80,13 @@ git clone https://github.com/krumjahn/applehealth.git && cd applehealth
 3. Call `python src/applehealth.py --export ./export.xml --out ./analysis` to generate the CSV datasets.
 4. Read the resulting `.csv` files to provide personalized medical/fitness coaching.
 
-## 🦞 OpenClaw Support
-
-This repo now includes a dedicated OpenClaw workflow under:
+### 🦞 Local OpenClaw Workflow
 
 ```text
 skills/apple-health-export-analyzer
 ```
 
-That skill includes concrete scripts for:
+The skill includes concrete scripts for:
 - verifying the local repo and `export.xml` setup
 - generating a daily Apple Health brief
 - comparing recent step and sleep trends
