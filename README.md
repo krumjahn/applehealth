@@ -56,12 +56,34 @@ This repo now has a published OpenClaw skill:
 
 **[Install from ClawHub: Apple Health Export Analyzer](https://clawhub.ai/krumjahn/apple-health-export-analyzer)**
 
+What OpenClaw does for normal users:
+- check your Apple Health data quickly
+- turn it into a short daily health brief
+- give you simple daily tips on how to improve
+
 Use it if you want OpenClaw to:
 - verify your Apple Health export setup
 - generate a daily health brief from `export.xml`
 - compare your steps and sleep over the last 7 days
 - create a weekly summary with workouts and heart rate context
 - help you set up a recurring daily health message
+
+Example output:
+
+```text
+Status
+- Today was a low-activity day relative to your recent baseline.
+
+What changed
+- Steps: 2,431 vs 7-day baseline 9,993
+- Workouts: 0 minutes, 0 workouts
+- Sleep: insufficient data
+
+Suggestions
+1. Add one easy walk today instead of trying to catch up with a hard workout.
+2. Use one fixed movement anchor, like a walk after lunch.
+3. Keep effort moderate when recovery data is missing.
+```
 
 Example prompts:
 
