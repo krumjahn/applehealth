@@ -1,0 +1,10 @@
+{
+  "id": "health-analyzer-local",
+  "name": "Health Data AI Analyzer Local",
+  "description": "Reads daily briefs and trends from the local Health Data AI Analyzer app",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

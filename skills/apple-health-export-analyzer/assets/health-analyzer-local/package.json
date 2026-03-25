@@ -1,0 +1,16 @@
+{
+  "name": "health-analyzer-local",
+  "version": "0.1.0",
+  "description": "Local OpenClaw tool for Health Data AI Analyzer",
+  "type": "module",
+  "main": "index.ts",
+  "files": [
+    "index.ts",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

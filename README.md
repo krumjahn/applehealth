@@ -65,6 +65,18 @@ The skill now supports two sources:
 - the `Health Data AI Analyzer` Mac app if its local API is available
 - this open-source `applehealth` export.xml workflow as a fallback
 
+If you want to use the Mac app path in a restricted OpenClaw session, run the one-time companion installer:
+
+```bash
+python skills/apple-health-export-analyzer/scripts/install_mac_app_companion.py --restart
+```
+
+Then use the companion skill:
+
+```text
+Use the health-analyzer-mac-local skill. Give me my daily health brief for today and 3 suggestions.
+```
+
 Use it if you want OpenClaw to:
 - verify your Apple Health export setup
 - generate a daily health brief from `export.xml`

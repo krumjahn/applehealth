@@ -1,0 +1,7 @@
+interface:
+  display_name: "Health Data AI Analyzer"
+  short_description: "Daily brief from the local Mac app using the installed Health Data AI Analyzer OpenClaw plugin"
+  default_prompt: "Use $health-analyzer-mac-local for this request. Give me my daily health brief for today and 3 suggestions for that day."
+
+policy:
+  allow_implicit_invocation: true
