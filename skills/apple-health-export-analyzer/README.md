@@ -1,6 +1,8 @@
 # Apple Health / HealthKit Export Analyzer for OpenClaw
 
-This skill packages the open-source [`krumjahn/applehealth`](https://github.com/krumjahn/applehealth) workflow for OpenClaw.
+This skill packages two OpenClaw workflows:
+- the `Health Data AI Analyzer` Mac app local API
+- the open-source [`krumjahn/applehealth`](https://github.com/krumjahn/applehealth) `export.xml` workflow
 
 It gives OpenClaw concrete scripts for:
 - setup verification
@@ -35,8 +37,9 @@ Suggestions
 
 ## Requirements
 
-- a clone of `https://github.com/krumjahn/applehealth`
-- an Apple Health `export.xml`
+- either:
+  - the `Health Data AI Analyzer` Mac app with local API enabled
+  - or a clone of `https://github.com/krumjahn/applehealth` plus an Apple Health `export.xml`
 - Python dependencies installed for that repo
 
 ## Start here
@@ -44,5 +47,5 @@ Suggestions
 Run the setup verifier first:
 
 ```bash
-python skills/apple-health-export-analyzer/scripts/check_setup.py --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis
+python skills/apple-health-export-analyzer/scripts/check_setup.py --source auto --repo /path/to/applehealth --export /path/to/export.xml --out /path/to/analysis
 ```

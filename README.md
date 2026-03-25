@@ -61,6 +61,10 @@ What OpenClaw does for normal users:
 - turn it into a short daily health brief
 - give you simple daily tips on how to improve
 
+The skill now supports two sources:
+- the `Health Data AI Analyzer` Mac app if its local API is available
+- this open-source `applehealth` export.xml workflow as a fallback
+
 Use it if you want OpenClaw to:
 - verify your Apple Health export setup
 - generate a daily health brief from `export.xml`

@@ -1,3 +1,3 @@
-display_name: Apple Health / HealthKit Export Analyzer
-short_description: Analyze Apple Health or HealthKit export.xml files with the open-source applehealth repo and generate OpenClaw daily briefs, step and sleep comparisons, and weekly summaries.
-default_prompt: Give me my latest Apple Health daily brief and 3 suggestions.
+display_name: Apple Health / HealthKit Analyzer
+short_description: Use either the Health Data AI Analyzer Mac app or the open-source applehealth export.xml workflow to generate OpenClaw daily briefs, step and sleep comparisons, and weekly summaries.
+default_prompt: Verify my setup, then give me my latest Apple Health daily brief and 3 suggestions.

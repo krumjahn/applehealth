@@ -3,40 +3,32 @@ from __future__ import annotations
 import json
 import os
 import sys
+import urllib.parse
+import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 import pandas as pd
 
+MAC_APP_BASE_URL = os.environ.get("HEALTH_ANALYZER_API_BASE_URL", "http://127.0.0.1:8765")
+MAC_APP_TOKEN_HEADER = "X-Health-Analyzer-Token"
+
 
 def discover_repo_root(explicit_repo: Optional[str] = None) -> Path:
     candidates = []
-
     if explicit_repo:
         candidates.append(Path(explicit_repo).expanduser())
-
     env_repo = os.environ.get("APPLEHEALTH_REPO")
     if env_repo:
         candidates.append(Path(env_repo).expanduser())
-
     cwd = Path.cwd()
-    candidates.extend(
-        [
-            cwd,
-            cwd / "applehealth",
-            Path(__file__).resolve().parents[3],
-        ]
-    )
-
+    candidates.extend([cwd, cwd / "applehealth", Path(__file__).resolve().parents[3]])
     for candidate in candidates:
         root = candidate.resolve()
         if (root / "src" / "applehealth.py").exists():
             return root
-
-    raise FileNotFoundError(
-        "Could not find the applehealth repo. Set APPLEHEALTH_REPO or pass --repo."
-    )
+    raise FileNotFoundError("Could not find the applehealth repo. Set APPLEHEALTH_REPO or pass --repo.")
 
 
 def load_analyzer(repo_root: Path):
@@ -48,23 +40,118 @@ def load_analyzer(repo_root: Path):
     return applehealth
 
 
+def _fetch_json(url: str, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    request = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_mac_app_openclaw_status() -> Dict[str, Any]:
+    return _fetch_json(f"{MAC_APP_BASE_URL}/openclaw/status")
+
+
+def try_fetch_mac_app_openclaw_status() -> Optional[Dict[str, Any]]:
+    try:
+        return fetch_mac_app_openclaw_status()
+    except Exception:
+        return None
+
+
+def fetch_mac_app_status() -> Dict[str, Any]:
+    return _fetch_json(f"{MAC_APP_BASE_URL}/status")
+
+
+def read_mac_app_token() -> str:
+    status = fetch_mac_app_status()
+    token_path = ((status.get("data") or {}).get("token_path")) or ""
+    if not token_path:
+        raise ValueError("Mac app status did not include a token path.")
+    token = Path(token_path).expanduser().read_text(encoding="utf-8").strip()
+    if not token:
+        raise ValueError("Mac app token file is empty.")
+    return token
+
+
+def fetch_mac_app_private_json(path: str) -> Dict[str, Any]:
+    token = read_mac_app_token()
+    headers = {MAC_APP_TOKEN_HEADER: token}
+    return _fetch_json(f"{MAC_APP_BASE_URL}{path}", headers=headers)
+
+
+def fetch_mac_app_daily_brief(target_date: Optional[str] = None) -> Dict[str, Any]:
+    path = "/openclaw/daily-brief"
+    if target_date:
+        path += f"?date={urllib.parse.quote(target_date)}"
+    payload = _fetch_json(f"{MAC_APP_BASE_URL}{path}")
+    data = payload.get("data")
+    if not data:
+        raise ValueError("Mac app daily brief returned no data.")
+    return data
+
+
+def fetch_mac_app_recent_trends(days: int = 7) -> Dict[str, Any]:
+    brief = fetch_mac_app_daily_brief()
+    target_date = pd.to_datetime(brief["date"]).date()
+    start_date = target_date - pd.Timedelta(days=days - 1)
+    steps_payload = fetch_mac_app_private_json(f"/steps/daily?start={start_date.isoformat()}&end={target_date.isoformat()}")
+    sleep_payload = fetch_mac_app_private_json(f"/sleep/summary?start={start_date.isoformat()}&end={target_date.isoformat()}")
+    step_days = ((steps_payload.get("data") or {}).get("days")) or []
+    sleep_days = ((sleep_payload.get("data") or {}).get("days")) or []
+    return {
+        "days": days,
+        "steps": {
+            "average": _average([day.get("value") for day in step_days]),
+            "best": _max_value([day.get("value") for day in step_days]),
+            "latest": _safe_float(step_days[-1].get("value")) if step_days else None,
+            "series": [{"date": day.get("date"), "value": _safe_float(day.get("value"))} for day in step_days],
+        },
+        "sleep": {
+            "average": _average([day.get("hours") for day in sleep_days]),
+            "best": _max_value([day.get("hours") for day in sleep_days]),
+            "latest": _safe_float(sleep_days[-1].get("hours")) if sleep_days else None,
+            "series": [{"date": day.get("date"), "value": _safe_float(day.get("hours"))} for day in sleep_days],
+        },
+    }
+
+
+def fetch_mac_app_weekly_summary(days: int = 7) -> Dict[str, Any]:
+    brief = fetch_mac_app_daily_brief()
+    target_date = pd.to_datetime(brief["date"]).date()
+    start_date = target_date - pd.Timedelta(days=days - 1)
+    trends = fetch_mac_app_recent_trends(days=days)
+    try:
+        workouts_payload = fetch_mac_app_private_json(f"/workouts/summary?start={start_date.isoformat()}&end={target_date.isoformat()}")
+    except Exception:
+        workouts_payload = {"data": {}}
+    heart_rate_payload = fetch_mac_app_private_json(f"/heart-rate/trends?start={start_date.isoformat()}&end={target_date.isoformat()}")
+    workout_data = workouts_payload.get("data") or {}
+    hr_data = heart_rate_payload.get("data") or {}
+    average_heart_rate = hr_data.get("average_heart_rate") or []
+    total_minutes = workout_data.get("total_minutes")
+    total_count = workout_data.get("total_workouts")
+    return {
+        "days": days,
+        "steps_average": trends["steps"]["average"],
+        "sleep_average": trends["sleep"]["average"],
+        "workout_minutes_total": _safe_float(total_minutes) or 0.0,
+        "workout_count_total": int(total_count) if total_count is not None else 0,
+        "heart_rate_average": _average([day.get("value") for day in average_heart_rate]),
+        "steps_series": trends["steps"]["series"],
+        "sleep_series": trends["sleep"]["series"],
+    }
+
+
 def configure_analyzer(analyzer, export_path: Optional[str], out_dir: Optional[str]) -> Dict[str, str]:
     repo_root = Path(analyzer.__file__).resolve().parents[1]
-    resolved_out = (
-        Path(out_dir).expanduser().resolve()
-        if out_dir
-        else Path(analyzer.get_output_dir()).expanduser().resolve()
-    )
+    resolved_out = Path(out_dir).expanduser().resolve() if out_dir else Path(analyzer.get_output_dir()).expanduser().resolve()
     resolved_out.mkdir(parents=True, exist_ok=True)
     analyzer._output_dir = str(resolved_out)
     analyzer._set_saved_pref("output_dir", str(resolved_out))
-
     resolved_export = None
     if export_path:
         resolved_export = Path(export_path).expanduser().resolve()
         analyzer._export_xml_path = str(resolved_export)
         analyzer._set_saved_pref("export_xml", str(resolved_export))
-
     return {
         "repo_root": str(repo_root),
         "out_dir": str(resolved_out),
@@ -91,7 +178,6 @@ def ensure_required_csvs(analyzer, required_files: Iterable[str]) -> Dict[str, s
         "weight_data.csv": analyzer.analyze_weight,
         "distance_data.csv": analyzer.analyze_distance,
     }
-
     resolved_paths: Dict[str, str] = {}
     with headless_plots(analyzer):
         for filename in required_files:
@@ -102,7 +188,6 @@ def ensure_required_csvs(analyzer, required_files: Iterable[str]) -> Dict[str, s
                     raise KeyError(f"No generator for required file: {filename}")
                 generator()
             resolved_paths[filename] = path
-
     return resolved_paths
 
 
@@ -152,10 +237,7 @@ def load_workouts(path: str) -> pd.DataFrame:
         return pd.DataFrame(columns=["count", "total_minutes"])
     if "duration_minutes" not in df.columns and "duration_hours" in df.columns:
         df["duration_minutes"] = df["duration_hours"].astype(float) * 60.0
-    grouped = df.groupby(pd.to_datetime(df["date"]).dt.date).agg(
-        count=("date", "size"),
-        total_minutes=("duration_minutes", "sum"),
-    )
+    grouped = df.groupby(pd.to_datetime(df["date"]).dt.date).agg(count=("date", "size"), total_minutes=("duration_minutes", "sum"))
     return grouped.sort_index()
 
 
@@ -191,20 +273,17 @@ def compute_daily_brief(steps: pd.Series, sleep: pd.Series, heart_rate: pd.Serie
     target_date = date_value or latest_available_date(steps, sleep, heart_rate, workouts)
     if target_date is None:
         raise ValueError("No analyzed data found. Run the export analysis first.")
-
     steps_value = series_value(steps, target_date)
     steps_baseline = baseline_before(steps, target_date)
     sleep_value = series_value(sleep, target_date)
     sleep_baseline = baseline_before(sleep, target_date)
     hr_value = series_value(heart_rate, target_date)
     hr_baseline = baseline_before(heart_rate, target_date)
-
     workout_count = None
     workout_minutes = None
     if not workouts.empty and target_date in workouts.index:
         workout_count = int(workouts.loc[target_date, "count"])
         workout_minutes = float(workouts.loc[target_date, "total_minutes"])
-
     signals = []
     if steps_value is not None and steps_baseline is not None and steps_value < steps_baseline * 0.7:
         signals.append("activity_below_baseline")
@@ -212,33 +291,14 @@ def compute_daily_brief(steps: pd.Series, sleep: pd.Series, heart_rate: pd.Serie
         signals.append("sleep_below_baseline")
     if workout_count == 0 and (steps_value or 0) < 5000:
         signals.append("low_training_load")
-
     return {
         "date": str(target_date),
-        "context_summary": (
-            f"Daily brief for {target_date}, "
-            f"steps {int(steps_value) if steps_value is not None else 'n/a'}"
-        ),
+        "context_summary": f"Daily brief for {target_date}, steps {int(steps_value) if steps_value is not None else 'n/a'}",
         "signals": signals,
-        "steps": {
-            "value": int(steps_value) if steps_value is not None else None,
-            "baseline_7d": steps_baseline,
-            "delta_vs_baseline": (steps_value - steps_baseline) if steps_value is not None and steps_baseline is not None else None,
-        },
-        "sleep": {
-            "hours": round(sleep_value, 2) if sleep_value is not None else None,
-            "baseline_7d": sleep_baseline,
-            "delta_vs_baseline": (sleep_value - sleep_baseline) if sleep_value is not None and sleep_baseline is not None else None,
-        },
-        "heart_rate": {
-            "average": round(hr_value, 2) if hr_value is not None else None,
-            "baseline_7d": hr_baseline,
-            "delta_vs_baseline": (hr_value - hr_baseline) if hr_value is not None and hr_baseline is not None else None,
-        },
-        "workouts": {
-            "count": workout_count if workout_count is not None else 0,
-            "total_minutes": round(workout_minutes, 1) if workout_minutes is not None else 0,
-        },
+        "steps": {"value": int(steps_value) if steps_value is not None else None, "baseline_7d": steps_baseline, "delta_vs_baseline": (steps_value - steps_baseline) if steps_value is not None and steps_baseline is not None else None},
+        "sleep": {"hours": round(sleep_value, 2) if sleep_value is not None else None, "baseline_7d": sleep_baseline, "delta_vs_baseline": (sleep_value - sleep_baseline) if sleep_value is not None and sleep_baseline is not None else None},
+        "heart_rate": {"average": round(hr_value, 2) if hr_value is not None else None, "baseline_7d": hr_baseline, "delta_vs_baseline": (hr_value - hr_baseline) if hr_value is not None and hr_baseline is not None else None},
+        "workouts": {"count": workout_count if workout_count is not None else 0, "total_minutes": round(workout_minutes, 1) if workout_minutes is not None else 0},
     }
 
 
@@ -266,7 +326,6 @@ def compute_weekly_summary(steps: pd.Series, sleep: pd.Series, workouts: pd.Data
     trends = compute_recent_trends(steps, sleep, days=days)
     workouts_recent = workouts.tail(days) if not workouts.empty else pd.DataFrame(columns=["count", "total_minutes"])
     hr_recent = heart_rate.tail(days)
-
     return {
         "days": days,
         "steps_average": trends["steps"]["average"],
@@ -277,6 +336,37 @@ def compute_weekly_summary(steps: pd.Series, sleep: pd.Series, workouts: pd.Data
         "steps_series": trends["steps"]["series"],
         "sleep_series": trends["sleep"]["series"],
     }
+
+
+def choose_source(requested_source: str) -> str:
+    if requested_source == "auto":
+        return "mac-app" if try_fetch_mac_app_openclaw_status() else "export"
+    return requested_source
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def _average(values: Iterable[Any]) -> Optional[float]:
+    cleaned = [_safe_float(value) for value in values]
+    cleaned = [value for value in cleaned if value is not None]
+    if not cleaned:
+        return None
+    return float(sum(cleaned) / len(cleaned))
+
+
+def _max_value(values: Iterable[Any]) -> Optional[float]:
+    cleaned = [_safe_float(value) for value in values]
+    cleaned = [value for value in cleaned if value is not None]
+    if not cleaned:
+        return None
+    return float(max(cleaned))
 
 
 def to_json(data: Dict[str, Any]) -> str:
