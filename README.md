@@ -128,7 +128,7 @@ docker run -it \
 ## 🤝 Contributing & Community
 Join our community of builders! If you improve the parser or add a new visualization, please submit a PR.
 
-**[Follow Keith on Threads (@krumjahn)](https://www.threads.net/@krumjahn)** for weekly AI-builder insights.
+**[Join my community](https://nas.io/rumjahn)** for updates, experiments, and AI-builder workflows.
 
 ---
 If you find this tool useful, **please give it a star ⭐️** to help others find it!
