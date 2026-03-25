@@ -10,9 +10,11 @@ This skill gives OpenClaw two ways to read Apple Health data:
 - preferred: use the `Health Data AI Analyzer` Mac app if its local API is running
 - fallback: use the open-source `applehealth` repo with an `export.xml`
 
-For Mac app mode in restricted OpenClaw sessions, install the bundled companion plugin once:
+For Mac app mode in restricted OpenClaw sessions, install the companion plugin from the `krumjahn/applehealth` repo once:
 
 ```bash
+git clone https://github.com/krumjahn/applehealth.git
+cd applehealth
 python skills/apple-health-export-analyzer/scripts/install_mac_app_companion.py --restart
 ```
 
@@ -55,7 +57,7 @@ If needed, read:
 - local API running on the Mac
 - app has a saved integration dataset
 - no `export.xml` needed
-- for TUI sessions without local file/shell tools, install the bundled companion plugin and then use `health-analyzer-mac-local`
+- for TUI sessions without local file/shell tools, clone `https://github.com/krumjahn/applehealth`, install the companion plugin, and then use `health-analyzer-mac-local`
 
 ### Option 2: applehealth repo
 

@@ -17,9 +17,11 @@ The OpenClaw scripts work best when you already know:
 
 If the `Health Data AI Analyzer` Mac app is running locally and has a saved integration dataset, the scripts can read that first.
 
-For OpenClaw sessions that do not expose local file or shell tools, install the bundled companion plugin once:
+For OpenClaw sessions that do not expose local file or shell tools, install the companion plugin from the `krumjahn/applehealth` repo:
 
 ```bash
+git clone https://github.com/krumjahn/applehealth.git
+cd applehealth
 python skills/apple-health-export-analyzer/scripts/install_mac_app_companion.py --restart
 ```
 

@@ -68,6 +68,8 @@ The skill now supports two sources:
 If you want to use the Mac app path in a restricted OpenClaw session, run the one-time companion installer:
 
 ```bash
+git clone https://github.com/krumjahn/applehealth.git
+cd applehealth
 python skills/apple-health-export-analyzer/scripts/install_mac_app_companion.py --restart
 ```
 
