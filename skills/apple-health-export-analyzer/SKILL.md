@@ -58,6 +58,7 @@ If needed, read:
 - app has a saved integration dataset
 - no `export.xml` needed
 - for TUI sessions without local file/shell tools, clone `https://github.com/krumjahn/applehealth`, install the companion plugin, and then use `health-analyzer-mac-local`
+- the public skill uses read-only `/openclaw/*` localhost endpoints for this mode and does not read local token files
 
 ### Option 2: applehealth repo
 

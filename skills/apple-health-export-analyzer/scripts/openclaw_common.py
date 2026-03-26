@@ -12,7 +12,6 @@ from typing import Any, Dict, Iterable, Optional
 import pandas as pd
 
 MAC_APP_BASE_URL = os.environ.get("HEALTH_ANALYZER_API_BASE_URL", "http://127.0.0.1:8765")
-MAC_APP_TOKEN_HEADER = "X-Health-Analyzer-Token"
 
 
 def discover_repo_root(explicit_repo: Optional[str] = None) -> Path:
@@ -57,27 +56,6 @@ def try_fetch_mac_app_openclaw_status() -> Optional[Dict[str, Any]]:
         return None
 
 
-def fetch_mac_app_status() -> Dict[str, Any]:
-    return _fetch_json(f"{MAC_APP_BASE_URL}/status")
-
-
-def read_mac_app_token() -> str:
-    status = fetch_mac_app_status()
-    token_path = ((status.get("data") or {}).get("token_path")) or ""
-    if not token_path:
-        raise ValueError("Mac app status did not include a token path.")
-    token = Path(token_path).expanduser().read_text(encoding="utf-8").strip()
-    if not token:
-        raise ValueError("Mac app token file is empty.")
-    return token
-
-
-def fetch_mac_app_private_json(path: str) -> Dict[str, Any]:
-    token = read_mac_app_token()
-    headers = {MAC_APP_TOKEN_HEADER: token}
-    return _fetch_json(f"{MAC_APP_BASE_URL}{path}", headers=headers)
-
-
 def fetch_mac_app_daily_brief(target_date: Optional[str] = None) -> Dict[str, Any]:
     path = "/openclaw/daily-brief"
     if target_date:
@@ -90,55 +68,19 @@ def fetch_mac_app_daily_brief(target_date: Optional[str] = None) -> Dict[str, An
 
 
 def fetch_mac_app_recent_trends(days: int = 7) -> Dict[str, Any]:
-    brief = fetch_mac_app_daily_brief()
-    target_date = pd.to_datetime(brief["date"]).date()
-    start_date = target_date - pd.Timedelta(days=days - 1)
-    steps_payload = fetch_mac_app_private_json(f"/steps/daily?start={start_date.isoformat()}&end={target_date.isoformat()}")
-    sleep_payload = fetch_mac_app_private_json(f"/sleep/summary?start={start_date.isoformat()}&end={target_date.isoformat()}")
-    step_days = ((steps_payload.get("data") or {}).get("days")) or []
-    sleep_days = ((sleep_payload.get("data") or {}).get("days")) or []
-    return {
-        "days": days,
-        "steps": {
-            "average": _average([day.get("value") for day in step_days]),
-            "best": _max_value([day.get("value") for day in step_days]),
-            "latest": _safe_float(step_days[-1].get("value")) if step_days else None,
-            "series": [{"date": day.get("date"), "value": _safe_float(day.get("value"))} for day in step_days],
-        },
-        "sleep": {
-            "average": _average([day.get("hours") for day in sleep_days]),
-            "best": _max_value([day.get("hours") for day in sleep_days]),
-            "latest": _safe_float(sleep_days[-1].get("hours")) if sleep_days else None,
-            "series": [{"date": day.get("date"), "value": _safe_float(day.get("hours"))} for day in sleep_days],
-        },
-    }
+    payload = _fetch_json(f"{MAC_APP_BASE_URL}/openclaw/recent-trends?days={days}")
+    data = payload.get("data")
+    if not data:
+        raise ValueError("Mac app recent trends returned no data.")
+    return data
 
 
 def fetch_mac_app_weekly_summary(days: int = 7) -> Dict[str, Any]:
-    brief = fetch_mac_app_daily_brief()
-    target_date = pd.to_datetime(brief["date"]).date()
-    start_date = target_date - pd.Timedelta(days=days - 1)
-    trends = fetch_mac_app_recent_trends(days=days)
-    try:
-        workouts_payload = fetch_mac_app_private_json(f"/workouts/summary?start={start_date.isoformat()}&end={target_date.isoformat()}")
-    except Exception:
-        workouts_payload = {"data": {}}
-    heart_rate_payload = fetch_mac_app_private_json(f"/heart-rate/trends?start={start_date.isoformat()}&end={target_date.isoformat()}")
-    workout_data = workouts_payload.get("data") or {}
-    hr_data = heart_rate_payload.get("data") or {}
-    average_heart_rate = hr_data.get("average_heart_rate") or []
-    total_minutes = workout_data.get("total_minutes")
-    total_count = workout_data.get("total_workouts")
-    return {
-        "days": days,
-        "steps_average": trends["steps"]["average"],
-        "sleep_average": trends["sleep"]["average"],
-        "workout_minutes_total": _safe_float(total_minutes) or 0.0,
-        "workout_count_total": int(total_count) if total_count is not None else 0,
-        "heart_rate_average": _average([day.get("value") for day in average_heart_rate]),
-        "steps_series": trends["steps"]["series"],
-        "sleep_series": trends["sleep"]["series"],
-    }
+    payload = _fetch_json(f"{MAC_APP_BASE_URL}/openclaw/weekly-summary?days={days}")
+    data = payload.get("data")
+    if not data:
+        raise ValueError("Mac app weekly summary returned no data.")
+    return data
 
 
 def configure_analyzer(analyzer, export_path: Optional[str], out_dir: Optional[str]) -> Dict[str, str]:

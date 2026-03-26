@@ -65,6 +65,8 @@ The skill now supports two sources:
 - the `Health Data AI Analyzer` Mac app if its local API is available
 - this open-source `applehealth` export.xml workflow as a fallback
 
+For the Mac app path, the public skill now uses read-only localhost OpenClaw endpoints and does not need to read a local token file.
+
 If you want to use the Mac app path in a restricted OpenClaw session, run the one-time companion installer:
 
 ```bash
