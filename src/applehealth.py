@@ -405,6 +405,150 @@ LITELLM_PROVIDERS = [
     },
 ]
 
+LITELLM_MODEL_CATALOG = [
+    {"provider_id": "openai", "model": "openai/gpt-4o", "label": "GPT-4o"},
+    {"provider_id": "openai", "model": "openai/gpt-4o-mini", "label": "GPT-4o Mini"},
+    {"provider_id": "openai", "model": "openai/gpt-4.1", "label": "GPT-4.1"},
+    {"provider_id": "openai", "model": "openai/gpt-4.1-mini", "label": "GPT-4.1 Mini"},
+    {"provider_id": "openai", "model": "openai/gpt-4-turbo", "label": "GPT-4 Turbo"},
+    {"provider_id": "openai", "model": "openai/gpt-4", "label": "GPT-4"},
+    {"provider_id": "openai", "model": "openai/gpt-3.5-turbo", "label": "GPT-3.5 Turbo"},
+    {"provider_id": "openai", "model": "openai/o3", "label": "o3"},
+    {"provider_id": "openai", "model": "openai/o3-mini", "label": "o3 Mini"},
+    {"provider_id": "openai", "model": "openai/o1", "label": "o1"},
+    {"provider_id": "openai", "model": "openai/o1-mini", "label": "o1 Mini"},
+    {"provider_id": "openai", "model": "openai/gpt-5", "label": "GPT-5"},
+    {"provider_id": "openai", "model": "openai/gpt-5-mini", "label": "GPT-5 Mini"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-3-5-sonnet-latest", "label": "Claude 3.5 Sonnet"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-3-5-haiku-latest", "label": "Claude 3.5 Haiku"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-3-opus-latest", "label": "Claude 3 Opus"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-3-sonnet-20240229", "label": "Claude 3 Sonnet"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-3-haiku-20240307", "label": "Claude 3 Haiku"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-sonnet-4-5-20250929", "label": "Claude Sonnet 4.5"},
+    {"provider_id": "anthropic", "model": "anthropic/claude-opus-4-1-20250805", "label": "Claude Opus 4.1"},
+    {"provider_id": "gemini", "model": "gemini/gemini-2.5-flash", "label": "Gemini 2.5 Flash"},
+    {"provider_id": "gemini", "model": "gemini/gemini-2.5-pro", "label": "Gemini 2.5 Pro"},
+    {"provider_id": "gemini", "model": "gemini/gemini-1.5-flash", "label": "Gemini 1.5 Flash"},
+    {"provider_id": "gemini", "model": "gemini/gemini-1.5-pro", "label": "Gemini 1.5 Pro"},
+    {"provider_id": "gemini", "model": "vertex_ai/gemini-1.5-pro", "label": "Vertex AI Gemini 1.5 Pro"},
+    {"provider_id": "gemini", "model": "vertex_ai/gemini-1.5-flash", "label": "Vertex AI Gemini 1.5 Flash"},
+    {"provider_id": "xai", "model": "xai/grok-2-latest", "label": "Grok 2 Latest"},
+    {"provider_id": "xai", "model": "xai/grok-beta", "label": "Grok Beta"},
+    {"provider_id": "xai", "model": "xai/grok-vision-beta", "label": "Grok Vision Beta"},
+    {"provider_id": "openrouter", "model": "openrouter/openai/gpt-4o", "label": "OpenRouter GPT-4o"},
+    {"provider_id": "openrouter", "model": "openrouter/openai/gpt-4o-mini", "label": "OpenRouter GPT-4o Mini"},
+    {"provider_id": "openrouter", "model": "openrouter/anthropic/claude-3.5-sonnet", "label": "OpenRouter Claude 3.5 Sonnet"},
+    {"provider_id": "openrouter", "model": "openrouter/google/gemini-2.5-pro", "label": "OpenRouter Gemini 2.5 Pro"},
+    {"provider_id": "openrouter", "model": "openrouter/meta-llama/llama-3.3-70b-instruct", "label": "OpenRouter Llama 3.3 70B"},
+    {"provider_id": "openrouter", "model": "openrouter/deepseek/deepseek-r1", "label": "OpenRouter DeepSeek R1"},
+    {"provider_id": "openrouter", "model": "openrouter/mistralai/mistral-large", "label": "OpenRouter Mistral Large"},
+    {"provider_id": "openrouter", "model": "openrouter/qwen/qwen-2.5-72b-instruct", "label": "OpenRouter Qwen 2.5 72B"},
+    {"provider_id": "custom", "model": "groq/llama-3.3-70b-versatile", "label": "Groq Llama 3.3 70B"},
+    {"provider_id": "custom", "model": "groq/mixtral-8x7b-32768", "label": "Groq Mixtral 8x7B"},
+    {"provider_id": "custom", "model": "groq/gemma2-9b-it", "label": "Groq Gemma2 9B"},
+    {"provider_id": "custom", "model": "together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo", "label": "Together Llama 3.3 70B"},
+    {"provider_id": "custom", "model": "together_ai/meta-llama/Llama-3.1-405B-Instruct-Turbo", "label": "Together Llama 3.1 405B"},
+    {"provider_id": "custom", "model": "together_ai/Qwen/Qwen2.5-72B-Instruct-Turbo", "label": "Together Qwen 2.5 72B"},
+    {"provider_id": "custom", "model": "together_ai/deepseek-ai/DeepSeek-R1", "label": "Together DeepSeek R1"},
+    {"provider_id": "custom", "model": "fireworks_ai/accounts/fireworks/models/llama-v3p3-70b-instruct", "label": "Fireworks Llama 3.3 70B"},
+    {"provider_id": "custom", "model": "fireworks_ai/accounts/fireworks/models/qwen2p5-72b-instruct", "label": "Fireworks Qwen 2.5 72B"},
+    {"provider_id": "custom", "model": "mistral/mistral-large-latest", "label": "Mistral Large"},
+    {"provider_id": "custom", "model": "mistral/mistral-small-latest", "label": "Mistral Small"},
+    {"provider_id": "custom", "model": "mistral/open-mixtral-8x22b", "label": "Mistral Mixtral 8x22B"},
+    {"provider_id": "custom", "model": "cohere/command-r-plus", "label": "Cohere Command R+"},
+    {"provider_id": "custom", "model": "cohere/command-r", "label": "Cohere Command R"},
+    {"provider_id": "custom", "model": "perplexity/llama-3.1-sonar-large-128k-online", "label": "Perplexity Sonar Large"},
+    {"provider_id": "custom", "model": "perplexity/sonar-pro", "label": "Perplexity Sonar Pro"},
+    {"provider_id": "custom", "model": "deepseek/deepseek-chat", "label": "DeepSeek Chat"},
+    {"provider_id": "custom", "model": "deepseek/deepseek-reasoner", "label": "DeepSeek Reasoner"},
+    {"provider_id": "custom", "model": "bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0", "label": "Bedrock Claude 3.5 Sonnet"},
+    {"provider_id": "custom", "model": "bedrock/meta.llama3-1-70b-instruct-v1:0", "label": "Bedrock Llama 3.1 70B"},
+    {"provider_id": "custom", "model": "bedrock/mistral.mistral-large-2407-v1:0", "label": "Bedrock Mistral Large"},
+    {"provider_id": "custom", "model": "azure/gpt-4o", "label": "Azure GPT-4o"},
+    {"provider_id": "custom", "model": "azure/gpt-4o-mini", "label": "Azure GPT-4o Mini"},
+    {"provider_id": "custom", "model": "azure/gpt-4.1", "label": "Azure GPT-4.1"},
+    {"provider_id": "custom", "model": "vertex_ai/gemini-1.5-pro", "label": "Vertex AI Gemini 1.5 Pro"},
+    {"provider_id": "custom", "model": "vertex_ai/gemini-1.5-flash", "label": "Vertex AI Gemini 1.5 Flash"},
+    {"provider_id": "custom", "model": "huggingface/meta-llama/Llama-3.3-70B-Instruct", "label": "Hugging Face Llama 3.3 70B"},
+    {"provider_id": "custom", "model": "huggingface/Qwen/Qwen2.5-72B-Instruct", "label": "Hugging Face Qwen 2.5 72B"},
+    {"provider_id": "custom", "model": "huggingface/deepseek-ai/DeepSeek-R1", "label": "Hugging Face DeepSeek R1"},
+    {"provider_id": "custom", "model": "replicate/meta/meta-llama-3-70b-instruct", "label": "Replicate Llama 3 70B"},
+    {"provider_id": "custom", "model": "replicate/deepseek-ai/deepseek-r1", "label": "Replicate DeepSeek R1"},
+    {"provider_id": "custom", "model": "cerebras/llama3.1-70b", "label": "Cerebras Llama 3.1 70B"},
+    {"provider_id": "custom", "model": "cerebras/llama3.1-8b", "label": "Cerebras Llama 3.1 8B"},
+    {"provider_id": "custom", "model": "databricks/databricks-meta-llama-3-1-70b-instruct", "label": "Databricks Llama 3.1 70B"},
+    {"provider_id": "custom", "model": "nvidia_nim/meta/llama-3.1-70b-instruct", "label": "NVIDIA NIM Llama 3.1 70B"},
+    {"provider_id": "custom", "model": "nvidia_nim/nvidia/llama-3.1-nemotron-70b-instruct", "label": "NVIDIA NIM Nemotron 70B"},
+    {"provider_id": "custom", "model": "writer/palmyra-x-004", "label": "Writer Palmyra X"},
+    {"provider_id": "custom", "model": "sambanova/Meta-Llama-3.1-70B-Instruct", "label": "SambaNova Llama 3.1 70B"},
+    {"provider_id": "custom", "model": "cloudflare/@cf/meta/llama-3.1-8b-instruct", "label": "Cloudflare Llama 3.1 8B"},
+    {"provider_id": "custom", "model": "cloudflare/@cf/mistral/mistral-7b-instruct-v0.2-lora", "label": "Cloudflare Mistral 7B"},
+    {"provider_id": "custom", "model": "openrouter/openai/o3-mini", "label": "OpenRouter o3-mini"},
+    {"provider_id": "custom", "model": "openrouter/openai/gpt-5-mini", "label": "OpenRouter GPT-5 Mini"},
+    {"provider_id": "custom", "model": "openrouter/anthropic/claude-3-opus", "label": "OpenRouter Claude 3 Opus"},
+    {"provider_id": "custom", "model": "openrouter/google/gemini-2.5-flash", "label": "OpenRouter Gemini 2.5 Flash"},
+    {"provider_id": "custom", "model": "openrouter/meta-llama/llama-3.1-405b-instruct", "label": "OpenRouter Llama 3.1 405B"},
+    {"provider_id": "custom", "model": "openrouter/microsoft/wizardlm-2-8x22b", "label": "OpenRouter WizardLM 2 8x22B"},
+    {"provider_id": "custom", "model": "openrouter/nousresearch/hermes-3-llama-3.1-405b", "label": "OpenRouter Hermes 3 405B"},
+    {"provider_id": "custom", "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct", "label": "OpenRouter Qwen 2.5 Coder 32B"},
+    {"provider_id": "custom", "model": "openrouter/mistralai/ministral-8b", "label": "OpenRouter Ministral 8B"},
+    {"provider_id": "custom", "model": "openrouter/deepseek/deepseek-chat-v3", "label": "OpenRouter DeepSeek Chat V3"},
+    {"provider_id": "custom", "model": "together_ai/meta-llama/Llama-3-8b-chat-hf", "label": "Together Llama 3 8B"},
+    {"provider_id": "custom", "model": "together_ai/mistralai/Mixtral-8x7B-Instruct-v0.1", "label": "Together Mixtral 8x7B"},
+    {"provider_id": "custom", "model": "together_ai/google/gemma-2-27b-it", "label": "Together Gemma 2 27B"},
+    {"provider_id": "custom", "model": "groq/llama3-8b-8192", "label": "Groq Llama 3 8B"},
+    {"provider_id": "custom", "model": "groq/llama3-70b-8192", "label": "Groq Llama 3 70B"},
+    {"provider_id": "custom", "model": "groq/gemma-7b-it", "label": "Groq Gemma 7B"},
+    {"provider_id": "custom", "model": "mistral/codestral-latest", "label": "Mistral Codestral"},
+    {"provider_id": "custom", "model": "mistral/open-codestral-mamba", "label": "Mistral Codestral Mamba"},
+    {"provider_id": "custom", "model": "cohere/command-nightly", "label": "Cohere Command Nightly"},
+    {"provider_id": "custom", "model": "perplexity/llama-3.1-sonar-small-128k-online", "label": "Perplexity Sonar Small"},
+    {"provider_id": "custom", "model": "deepseek/deepseek-coder", "label": "DeepSeek Coder"},
+    {"provider_id": "custom", "model": "huggingface/microsoft/Phi-3-medium-128k-instruct", "label": "Hugging Face Phi-3 Medium"},
+    {"provider_id": "custom", "model": "replicate/mistralai/mixtral-8x7b-instruct-v0.1", "label": "Replicate Mixtral 8x7B"},
+]
+
+def _infer_litellm_provider_id(model_name: str) -> str:
+    """Infer the configured provider from a LiteLLM model string."""
+    if not model_name or "/" not in model_name:
+        return "custom"
+    prefix = model_name.split("/", 1)[0].lower()
+    mapping = {
+        "openai": "openai",
+        "anthropic": "anthropic",
+        "gemini": "gemini",
+        "vertex_ai": "gemini",
+        "xai": "xai",
+        "openrouter": "openrouter",
+        "ollama": "ollama",
+    }
+    return mapping.get(prefix, "custom")
+
+def _get_litellm_provider(provider_id: str) -> Dict[str, Any]:
+    """Return provider metadata for the given provider id."""
+    return next((provider for provider in LITELLM_PROVIDERS if provider["id"] == provider_id), LITELLM_PROVIDERS[-1])
+
+def _get_litellm_catalog_entries() -> List[Dict[str, str]]:
+    """Return bundled model catalog plus local Ollama models when available."""
+    entries = [dict(entry) for entry in LITELLM_MODEL_CATALOG]
+    seen = {entry["model"] for entry in entries}
+    ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    try:
+        from ollama import Client
+        client = Client(host=ollama_host)
+        for model_name in _extract_ollama_model_names(client.list()):
+            prefixed = model_name if model_name.startswith("ollama/") else f"ollama/{model_name}"
+            if prefixed not in seen:
+                entries.append({
+                    "provider_id": "ollama",
+                    "model": prefixed,
+                    "label": f"Local Ollama: {model_name}",
+                })
+                seen.add(prefixed)
+    except Exception:
+        pass
+    return entries
+
 def _prompt_litellm_provider() -> Dict[str, Any]:
     """Prompt for a LiteLLM provider selection and remember it."""
     provider_ids = [provider["id"] for provider in LITELLM_PROVIDERS]
@@ -435,7 +579,197 @@ def _prompt_litellm_provider() -> Dict[str, Any]:
     _set_saved_pref("litellm_provider", chosen["id"])
     return chosen
 
-def _resolve_litellm_model(provider: Dict[str, Any]) -> Tuple[str, Optional[str]]:
+def _prompt_litellm_model_terminal(entries: List[Dict[str, str]]) -> str:
+    """Terminal fallback for selecting a LiteLLM model string."""
+    print("\nBrowse more models at: https://models.dev/")
+    print("Paste any LiteLLM model string if it is not listed below.")
+    print("\nSuggested models:")
+    for idx, entry in enumerate(entries[:25], start=1):
+        print(f"{idx}. {entry['model']} ({entry['label']})")
+
+    remembered = _get_saved_pref("litellm_model", "")
+    prompt = "\nChoose model"
+    if remembered:
+        prompt += f" [{remembered}]"
+    prompt += " (number or provider/model-name): "
+    entered = input(prompt).strip()
+    if entered.isdigit():
+        index = int(entered) - 1
+        if 0 <= index < len(entries):
+            chosen = entries[index]["model"]
+        else:
+            raise ValueError(f"Invalid selection '{entered}'.")
+    else:
+        chosen = entered or remembered
+
+    if not chosen:
+        raise ValueError("A LiteLLM model selection is required.")
+
+    _set_saved_pref("litellm_model", chosen)
+    return chosen
+
+def _select_litellm_model_dialog(entries: List[Dict[str, str]], remembered: str) -> Optional[str]:
+    """Open a searchable PyQt model picker dialog and return a model string."""
+    try:
+        from PyQt6.QtCore import Qt, QUrl
+        from PyQt6.QtGui import QDesktopServices
+        from PyQt6.QtWidgets import (
+            QApplication,
+            QComboBox,
+            QDialog,
+            QDialogButtonBox,
+            QHBoxLayout,
+            QLabel,
+            QLineEdit,
+            QListWidget,
+            QListWidgetItem,
+            QPushButton,
+            QVBoxLayout,
+        )
+    except Exception:
+        return None
+
+    class _ModelPickerDialog(QDialog):
+        def __init__(self, catalog_entries: List[Dict[str, str]], initial_model: str):
+            super().__init__()
+            self.catalog_entries = catalog_entries
+            self.selected_model = None
+            self.setWindowTitle("Choose LiteLLM Model")
+            self.resize(860, 620)
+
+            layout = QVBoxLayout(self)
+            intro = QLabel(
+                "Search across bundled LiteLLM models, filter by provider, or paste any provider/model string."
+            )
+            intro.setWordWrap(True)
+            layout.addWidget(intro)
+
+            top_row = QHBoxLayout()
+            self.provider_filter = QComboBox()
+            self.provider_filter.addItem("All Providers", "__all__")
+            for provider in LITELLM_PROVIDERS:
+                self.provider_filter.addItem(provider["label"], provider["id"])
+            top_row.addWidget(self.provider_filter)
+
+            self.search_input = QLineEdit()
+            self.search_input.setPlaceholderText("Search model id or label")
+            top_row.addWidget(self.search_input)
+            layout.addLayout(top_row)
+
+            self.list_widget = QListWidget()
+            self.list_widget.setAlternatingRowColors(True)
+            layout.addWidget(self.list_widget, 1)
+
+            self.details_label = QLabel("")
+            self.details_label.setWordWrap(True)
+            self.details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            layout.addWidget(self.details_label)
+
+            custom_row = QHBoxLayout()
+            custom_label = QLabel("Custom model:")
+            self.custom_input = QLineEdit()
+            self.custom_input.setPlaceholderText("provider/model-name")
+            custom_row.addWidget(custom_label)
+            custom_row.addWidget(self.custom_input, 1)
+            layout.addLayout(custom_row)
+
+            actions = QHBoxLayout()
+            self.link_button = QPushButton("Open models.dev")
+            self.link_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://models.dev/")))
+            actions.addWidget(self.link_button)
+            actions.addStretch(1)
+            layout.addLayout(actions)
+
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            buttons.accepted.connect(self._accept_selection)
+            buttons.rejected.connect(self.reject)
+            layout.addWidget(buttons)
+
+            self.provider_filter.currentIndexChanged.connect(self._refresh_list)
+            self.search_input.textChanged.connect(self._refresh_list)
+            self.list_widget.itemSelectionChanged.connect(self._update_details)
+            self.list_widget.itemDoubleClicked.connect(lambda _item: self._accept_selection())
+
+            self._refresh_list()
+            if initial_model:
+                self._select_model(initial_model)
+
+        def _refresh_list(self):
+            provider_filter = self.provider_filter.currentData()
+            query = self.search_input.text().strip().lower()
+            self.list_widget.clear()
+
+            for entry in self.catalog_entries:
+                provider_ok = provider_filter == "__all__" or entry["provider_id"] == provider_filter
+                haystack = f"{entry['model']} {entry['label']}".lower()
+                if provider_ok and (not query or query in haystack):
+                    item = QListWidgetItem(f"{entry['model']}  |  {entry['label']}")
+                    item.setData(Qt.ItemDataRole.UserRole, entry)
+                    self.list_widget.addItem(item)
+
+            if self.list_widget.count() > 0:
+                self.list_widget.setCurrentRow(0)
+            else:
+                self.details_label.setText("No bundled matches. Paste a provider/model string or open models.dev.")
+
+        def _update_details(self):
+            item = self.list_widget.currentItem()
+            if not item:
+                return
+            entry = item.data(Qt.ItemDataRole.UserRole)
+            provider = _get_litellm_provider(entry["provider_id"])
+            self.details_label.setText(
+                f"Provider: {provider['label']}\nModel: {entry['model']}\nLabel: {entry['label']}"
+            )
+
+        def _select_model(self, model_name: str):
+            for index in range(self.list_widget.count()):
+                item = self.list_widget.item(index)
+                entry = item.data(Qt.ItemDataRole.UserRole)
+                if entry["model"] == model_name:
+                    self.list_widget.setCurrentItem(item)
+                    return
+
+        def _accept_selection(self):
+            custom_value = self.custom_input.text().strip()
+            item = self.list_widget.currentItem()
+            if custom_value:
+                self.selected_model = custom_value
+                self.accept()
+                return
+            if item is not None:
+                entry = item.data(Qt.ItemDataRole.UserRole)
+                self.selected_model = entry["model"]
+                self.accept()
+                return
+            self.reject()
+
+    try:
+        app = QApplication.instance()
+        owns_app = app is None
+        if owns_app:
+            app = QApplication(sys.argv[:1])
+
+        dialog = _ModelPickerDialog(entries, remembered)
+        result = dialog.exec()
+        chosen = dialog.selected_model if result else None
+
+        if owns_app:
+            app.quit()
+        return chosen
+    except Exception:
+        return None
+
+def _select_litellm_model(entries: List[Dict[str, str]]) -> str:
+    """Select a LiteLLM model via GUI dialog when available, else terminal prompts."""
+    remembered = _get_saved_pref("litellm_model", "")
+    chosen = _select_litellm_model_dialog(entries, remembered)
+    if chosen is None:
+        chosen = _prompt_litellm_model_terminal(entries)
+    _set_saved_pref("litellm_model", chosen)
+    return chosen
+
+def _resolve_litellm_model(provider: Dict[str, Any], selected_model: str) -> Tuple[str, Optional[str]]:
     """Resolve the selected LiteLLM model string and optional api_base."""
     api_base = None
     if provider.get("supports_model_listing"):
@@ -448,37 +782,15 @@ def _resolve_litellm_model(provider: Dict[str, Any]) -> Tuple[str, Optional[str]
                 ollama_host = custom_host
         api_base = ollama_host
 
-        from ollama import Client
-        client = Client(host=ollama_host)
-        raw_model_name = _choose_ollama_model(client, provider["provider_key"], f"{provider['label']} via LiteLLM")
-        if raw_model_name.startswith("ollama/"):
-            model_name = raw_model_name
-        else:
-            model_name = f"ollama/{raw_model_name}"
+        model_name = selected_model if selected_model.startswith("ollama/") else f"ollama/{selected_model}"
         return model_name, api_base
 
     if provider["id"] == "custom":
-        remembered = _get_saved_model(provider["provider_key"], "")
-        prompt = "\nLiteLLM model string"
-        if remembered:
-            prompt += f" [{remembered}]"
-        prompt += " (provider/model-name): "
-        entered = input(prompt).strip()
-        model_name = entered or remembered
-        if not model_name:
-            raise ValueError("A LiteLLM provider/model string is required.")
-        _set_saved_model(provider["provider_key"], model_name)
         custom_api_base = input("Custom API base (optional, press Enter to skip): ").strip()
         api_base = custom_api_base or None
-        return model_name, api_base
+        return selected_model, api_base
 
-    model_name = _prompt_model_name(
-        provider["provider_key"],
-        provider["default_model"],
-        f"{provider['label']} via LiteLLM",
-        provider.get("examples", ""),
-    )
-    return model_name, api_base
+    return selected_model, api_base
 
 def analyze_with_litellm(csv_files):
     """Analyze health data using a LiteLLM-backed provider selection flow."""
@@ -491,7 +803,11 @@ def analyze_with_litellm(csv_files):
         return
 
     try:
-        provider = _prompt_litellm_provider()
+        entries = _get_litellm_catalog_entries()
+        selected_model = _select_litellm_model(entries)
+        provider_id = _infer_litellm_provider_id(selected_model)
+        provider = _get_litellm_provider(provider_id)
+
         if provider.get("api_key_env"):
             key = _get_or_prompt_key(provider["api_key_env"], provider.get("api_label", provider["label"]))
             if not key:
@@ -499,7 +815,8 @@ def analyze_with_litellm(csv_files):
             if provider["id"] == "gemini":
                 os.environ["GOOGLE_API_KEY"] = key
 
-        model_name, api_base = _resolve_litellm_model(provider)
+        model_name, api_base = _resolve_litellm_model(provider, selected_model)
+        _set_saved_model(provider["provider_key"], model_name)
         _status(f"Using LiteLLM with model: {model_name}")
 
         request_kwargs = {
@@ -3151,13 +3468,15 @@ def show_openclaw_guide():
     print("\n" + "=" * 50)
     print("🦞 OPENCLAW SETUP GUIDE")
     print("=" * 50 + "\n")
-    print("This repo supports OpenClaw through the published skill:")
+    print("This repo supports OpenClaw through the published Apple Health Export Analyzer skill.")
+    print("ClawHub skill page:")
     print("https://clawhub.ai/krumjahn/apple-health-export-analyzer\n")
     print("How to use it:")
     print("1. Install or clone this repo:")
     print("   git clone https://github.com/krumjahn/applehealth.git")
     print("2. Put your Apple Health export.xml somewhere accessible.")
-    print("3. Install the OpenClaw skill from ClawHub.")
+    print("3. In OpenClaw, install the skill from ClawHub if you have not already installed it.")
+    print("   If the skill is already installed in OpenClaw, you can skip this step.")
     print("4. Use prompts like:")
     print('   - Use the Apple Health Export Analyzer skill. Verify my setup and give me my latest daily health brief with 3 suggestions.')
     print('   - Use the Apple Health Export Analyzer skill. Compare my steps and sleep over the last 7 days.')
