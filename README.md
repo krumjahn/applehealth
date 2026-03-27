@@ -8,7 +8,7 @@
 [![DeepSeek-R1 Supported](https://img.shields.io/badge/DeepSeek--R1-Local%20AI-blueviolet)](https://ollama.com/library/deepseek-r1)
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-ff6b35.svg)](https://clawhub.ai/krumjahn/apple-health-export-analyzer)
 
-https://github.com/krumjahn/applehealth/raw/main/OpenSourceDemo.mp4
+https://github.com/user-attachments/assets/98ad8fc3-ed1d-4395-80c5-eb66a8cceb61
 
 ---
 
