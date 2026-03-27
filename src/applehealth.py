@@ -3205,6 +3205,24 @@ def analyze_with_localai(csv_files):
         save_prefix='localai'
     )
 
+def analyze_with_msty(csv_files):
+    """Analyze using Msty's local OpenAI-compatible endpoint.
+
+    Env:
+    - MSTY_BASE_URL (default: http://localhost:10000/v1)
+    - MSTY_API_KEY (default: msty)
+    """
+    return _analyze_with_openai_compatible(
+        csv_files,
+        provider_name='Msty',
+        base_url_env='MSTY_BASE_URL',
+        api_key_env='MSTY_API_KEY',
+        default_base_url='http://localhost:10000/v1',
+        default_api_key='msty',
+        default_model_hint='Enter the model name available in Msty',
+        save_prefix='msty'
+    )
+
 def convert_xml_to_csv():
     """Convert Apple Health export.xml into comprehensive CSV files.
 
@@ -3505,36 +3523,41 @@ def main():
     print("Tip: You can drag-and-drop your export.xml into this window when prompted.")
     while True:
         print("\nWhat would you like to do?")
-        # Core analyses
-        print("0. Diagnose Export & Generate Debug Report")
-        print("1. Analyze Steps")
-        print("2. Analyze Distance")
-        print("3. Analyze Heart Rate")
-        print("4. Analyze Weight")
-        print("5. Analyze Sleep")
-        print("6. Analyze Workouts")
-        print("7. Convert XML → CSV (Full Dump)")
-        print("8. Convert XML → JSON (Full Dump)")
-        # AI analyses
-        print("9. AI: Analyze All Data (OpenAI)")
-        print("10. AI: Analyze with Claude (Anthropic)")
-        print("11. AI: Analyze with Gemini (Google)")
-        print("12. AI: Analyze with Grok (xAI)")
-        print("13. AI: Analyze with OpenRouter")
-        print("14. AI: Analyze with Ollama (Local)")
-        print("15. AI: Analyze with Ollama (Remote)")
-        print("16. AI: Analyze with LM Studio")
-        print("17. AI: Analyze with Jan")
-        print("18. AI: Analyze with LocalAI")
-        print("19. AI: Analyze with LiteLLM (Universal)")
-        # Settings and help
-        print("20. AI Settings")
-        print("21. Reset Preferences")
-        print("22. View Change Log")
-        print("23. OpenClaw Setup Guide")
-        print("24. Exit")
+        print("\nData & Export")
+        print("1. Diagnose Export & Generate Debug Report")
+        print("2. Analyze Steps")
+        print("3. Analyze Distance")
+        print("4. Analyze Heart Rate")
+        print("5. Analyze Weight")
+        print("6. Analyze Sleep")
+        print("7. Analyze Workouts")
+        print("8. Convert XML → CSV (Full Dump)")
+        print("9. Convert XML → JSON (Full Dump)")
 
-        choice = input("Enter your choice (0-24): ")
+        print("\nCloud AI")
+        print("10. AI: Analyze All Data (OpenAI)")
+        print("11. AI: Analyze with Claude (Anthropic)")
+        print("12. AI: Analyze with Gemini (Google)")
+        print("13. AI: Analyze with Grok (xAI)")
+        print("14. AI: Analyze with OpenRouter")
+
+        print("\nLocal AI")
+        print("20. AI: Analyze with Ollama (Local)")
+        print("21. AI: Analyze with Ollama (Remote)")
+        print("22. AI: Analyze with LM Studio")
+        print("23. AI: Analyze with Jan")
+        print("24. AI: Analyze with LocalAI")
+        print("25. AI: Analyze with Msty")
+        print("26. AI: Analyze with LiteLLM (Universal)")
+
+        print("\nSettings & Help")
+        print("30. AI Settings")
+        print("31. Reset Preferences")
+        print("32. View Change Log")
+        print("33. OpenClaw Setup Guide")
+        print("34. Exit")
+
+        choice = input("Enter your choice: ").strip()
         
         # List of available data files and their types
         data_files = [
@@ -3547,52 +3570,54 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19'}:
+        if choice in {'1','2','3','4','5','6','7','8','9','10','11','12','13','14','20','21','22','23','24','25','26'}:
             if not ensure_export_available():
                 continue
 
-        if choice == '0':
+        if choice == '1':
             export_path = resolve_export_xml()
             generate_debug_reports(export_path)
-        elif choice == '1':
-            analyze_steps()
         elif choice == '2':
-            analyze_distance()
+            analyze_steps()
         elif choice == '3':
-            analyze_heart_rate()
+            analyze_distance()
         elif choice == '4':
-            analyze_weight()
+            analyze_heart_rate()
         elif choice == '5':
-            analyze_sleep()
+            analyze_weight()
         elif choice == '6':
-            analyze_workouts()
+            analyze_sleep()
         elif choice == '7':
-            convert_xml_to_csv()
+            analyze_workouts()
         elif choice == '8':
-            convert_xml_to_json()
+            convert_xml_to_csv()
         elif choice == '9':
-            analyze_with_chatgpt(data_files)
+            convert_xml_to_json()
         elif choice == '10':
-            analyze_with_claude(data_files)
+            analyze_with_chatgpt(data_files)
         elif choice == '11':
-            analyze_with_gemini(data_files)
+            analyze_with_claude(data_files)
         elif choice == '12':
-            analyze_with_grok(data_files)
+            analyze_with_gemini(data_files)
         elif choice == '13':
-            analyze_with_openrouter(data_files)
+            analyze_with_grok(data_files)
         elif choice == '14':
-            analyze_with_ollama(data_files)
-        elif choice == '15':
-            analyze_with_external_ollama(data_files)
-        elif choice == '16':
-            analyze_with_lmstudio(data_files)
-        elif choice == '17':
-            analyze_with_jan(data_files)
-        elif choice == '18':
-            analyze_with_localai(data_files)
-        elif choice == '19':
-            analyze_with_litellm(data_files)
+            analyze_with_openrouter(data_files)
         elif choice == '20':
+            analyze_with_ollama(data_files)
+        elif choice == '21':
+            analyze_with_external_ollama(data_files)
+        elif choice == '22':
+            analyze_with_lmstudio(data_files)
+        elif choice == '23':
+            analyze_with_jan(data_files)
+        elif choice == '24':
+            analyze_with_localai(data_files)
+        elif choice == '25':
+            analyze_with_msty(data_files)
+        elif choice == '26':
+            analyze_with_litellm(data_files)
+        elif choice == '30':
             print("\nAI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -3602,17 +3627,17 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '21':
+        elif choice == '31':
             confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
             if confirm in ('y', 'yes'):
                 reset_preferences()
             else:
                 print("Cancelled.")
-        elif choice == '22':
+        elif choice == '32':
             show_changelog()
-        elif choice == '23':
+        elif choice == '33':
             show_openclaw_guide()
-        elif choice == '24':
+        elif choice == '34':
             print("Goodbye!")
             break
         else:
