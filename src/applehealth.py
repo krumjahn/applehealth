@@ -265,6 +265,77 @@ def _strip_reasoning_blocks(text: str) -> str:
     except Exception:
         return text
 
+def _extract_ollama_model_names(models_response: Any) -> List[str]:
+    """Extract model names from Ollama list responses across SDK versions."""
+    try:
+        if isinstance(models_response, dict):
+            models = models_response.get('models', []) or []
+        else:
+            models = getattr(models_response, 'models', None) or []
+    except Exception:
+        models = []
+
+    names = []
+    for model in models:
+        try:
+            if isinstance(model, dict):
+                name = model.get('name') or model.get('model')
+            else:
+                name = getattr(model, 'name', None) or getattr(model, 'model', None)
+            if name:
+                names.append(name)
+        except Exception:
+            continue
+    return names
+
+def _choose_ollama_model(client: Any, provider_key: str, provider_label: str, default_model: str = "deepseek-r1") -> str:
+    """List available Ollama models, prompt for a selection, and remember it."""
+    remembered = _get_saved_model(provider_key, default_model)
+    model_names: List[str] = []
+
+    try:
+        models_response = client.list()
+        model_names = _extract_ollama_model_names(models_response)
+    except Exception as e:
+        _status(f"Could not list models from {provider_label}: {e}")
+
+    if not model_names:
+        print(f"No models could be listed from {provider_label}.")
+        return _prompt_model_name(provider_key, remembered, provider_label, "enter an installed Ollama model name")
+
+    print(f"\nAvailable models on {provider_label}:")
+    for idx, name in enumerate(model_names, start=1):
+        suffix = " (saved)" if name == remembered else ""
+        print(f"{idx}. {name}{suffix}")
+
+    if remembered in model_names:
+        default_choice = remembered
+    else:
+        deepseek_models = [name for name in model_names if 'deepseek' in name.lower()]
+        default_choice = deepseek_models[0] if deepseek_models else model_names[0]
+
+    entered = input(
+        f"\nChoose model for {provider_label} [default: {default_choice}] "
+        "(number or model name): "
+    ).strip()
+
+    chosen = default_choice
+    if entered:
+        if entered.isdigit():
+            index = int(entered) - 1
+            if 0 <= index < len(model_names):
+                chosen = model_names[index]
+            else:
+                print(f"Invalid selection '{entered}'. Using default: {default_choice}")
+        elif entered in model_names:
+            chosen = entered
+        else:
+            print(f"Model '{entered}' was not in the listed results. Using it anyway.")
+            chosen = entered
+
+    _set_saved_model(provider_key, chosen)
+    return chosen
+
 def reset_preferences():
     """Delete saved preferences file and clear in-memory overrides."""
     path = _prefs_path()
@@ -1524,13 +1595,15 @@ def analyze_with_ollama(csv_files):
         4. Areas that might need attention or improvement
         """
 
+        model_name = _choose_ollama_model(ollama, "ollama_model", "local Ollama")
+
         # Rest of the Ollama API call with streaming
-        _status("Contacting local Ollama (Deepseek-R1)...")
+        _status(f"Contacting local Ollama with model: {model_name}...")
         collected = []
         try:
             with spinner("Contacting Ollama"):
                 stream = ollama.chat(
-                    model='deepseek-r1',
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
                         {"role": "user", "content": prompt}
@@ -1549,7 +1622,7 @@ def analyze_with_ollama(csv_files):
         except Exception:
             with spinner("Waiting for Ollama response"):
                 response = ollama.chat(
-                    model='deepseek-r1',
+                    model=model_name,
                     messages=[
                         {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
                         {"role": "user", "content": prompt}
@@ -1567,7 +1640,7 @@ def analyze_with_ollama(csv_files):
             filename = f"health_analysis_ollama_{timestamp}.md"
             
             # Create markdown content
-            markdown_content = f"# Apple Health Data Analysis (Ollama Deepseek-R1)\n\n"
+            markdown_content = f"# Apple Health Data Analysis (Ollama: {model_name})\n\n"
             markdown_content += f"*Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
             markdown_content += f"## Data Summary\n\n"
             
@@ -1747,33 +1820,9 @@ def analyze_with_external_ollama(csv_files):
             print(f"Creating Ollama client with host: {ollama_host}")
             client = Client(host=ollama_host)
             
-            # Test connectivity and list available models
-            try:
-                print("Testing connectivity and listing available models...")
-                models_list = client.list()
-                print("Successfully connected to Ollama server!")
-                
-                # Extract and display available models
-                model_names = [model.get("name") for model in models_list.get("models", [])]
-                if model_names:
-                    print(f"Available models: {', '.join(model_names)}")
-                    
-                    # Try to find a deepseek model
-                    deepseek_models = [m for m in model_names if 'deepseek' in m]
-                    if deepseek_models:
-                        model_name = deepseek_models[0]
-                        print(f"Selected deepseek model: {model_name}")
-                    else:
-                        # Otherwise use the first available model
-                        model_name = model_names[0]
-                        print(f"No deepseek model found. Using: {model_name}")
-                else:
-                    print("No models found on the server. Using default 'deepseek-r1:7b'")
-                    model_name = "deepseek-r1:7b"
-            except Exception as e:
-                print(f"Error listing models: {e}")
-                print("Using default model 'deepseek-r1:7b'")
-                model_name = "deepseek-r1:7b"
+            print("Testing connectivity and listing available models...")
+            model_name = _choose_ollama_model(client, "external_ollama_model", f"Ollama server at {ollama_host}")
+            print("Successfully connected to Ollama server!")
 
             # Prepare messages for the chat API
             messages = [{
@@ -1843,12 +1892,14 @@ def analyze_with_external_ollama(csv_files):
                         "role": "user", 
                         "content": user_prompt
                     }]
+                    local_model_name = _choose_ollama_model(local_client, "ollama_model", "local Ollama")
                     
                     response = local_client.chat(
-                        model='deepseek-r1',
+                        model=local_model_name,
                         messages=local_messages,
                         options=options
                     )
+                    model_name = local_model_name
                     analysis_content = response['message']['content']
                     print("Successfully received response from local Ollama!")
                 except Exception as local_error:
@@ -1862,7 +1913,7 @@ def analyze_with_external_ollama(csv_files):
 
         analysis_content = response['message']['content']
         
-        print("\nDeepseek-R1 Analysis:")
+        print(f"\nOllama Analysis ({model_name}):")
         print("=" * 50)
         print(analysis_content)
         
@@ -1873,7 +1924,7 @@ def analyze_with_external_ollama(csv_files):
             filename = f"health_analysis_ollama_{timestamp}.md"
             
             # Create markdown content
-            markdown_content = f"# Apple Health Data Analysis (Ollama Deepseek-R1)\n\n"
+            markdown_content = f"# Apple Health Data Analysis (Ollama: {model_name})\n\n"
             markdown_content += f"*Analysis generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
             markdown_content += f"## Data Summary\n\n"
             
