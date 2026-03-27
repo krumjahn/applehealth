@@ -55,6 +55,10 @@ try:
     import google.generativeai as genai  # Gemini SDK
 except Exception:
     genai = None
+try:
+    from litellm import completion as litellm_completion
+except Exception:
+    litellm_completion = None
 
 # Optional user-provided path to export.xml (from CLI or prompt)
 _export_xml_path = None
@@ -335,6 +339,235 @@ def _choose_ollama_model(client: Any, provider_key: str, provider_label: str, de
 
     _set_saved_model(provider_key, chosen)
     return chosen
+
+LITELLM_PROVIDERS = [
+    {
+        "id": "openai",
+        "label": "OpenAI",
+        "default_model": "openai/gpt-4o",
+        "provider_key": "litellm_openai_model",
+        "examples": "openai/gpt-4o, openai/gpt-4o-mini",
+        "api_key_env": "OPENAI_API_KEY",
+        "api_label": "OpenAI",
+    },
+    {
+        "id": "anthropic",
+        "label": "Anthropic",
+        "default_model": "anthropic/claude-3-5-sonnet-latest",
+        "provider_key": "litellm_anthropic_model",
+        "examples": "anthropic/claude-3-5-sonnet-latest",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "api_label": "Anthropic (Claude)",
+    },
+    {
+        "id": "gemini",
+        "label": "Google Gemini",
+        "default_model": "gemini/gemini-2.5-flash",
+        "provider_key": "litellm_gemini_model",
+        "examples": "gemini/gemini-2.5-flash, vertex_ai/gemini-1.5-pro",
+        "api_key_env": "GEMINI_API_KEY",
+        "api_label": "Google Gemini",
+    },
+    {
+        "id": "xai",
+        "label": "xAI Grok",
+        "default_model": "xai/grok-2-latest",
+        "provider_key": "litellm_xai_model",
+        "examples": "xai/grok-2-latest",
+        "api_key_env": "XAI_API_KEY",
+        "api_label": "xAI",
+    },
+    {
+        "id": "openrouter",
+        "label": "OpenRouter",
+        "default_model": "openrouter/openai/gpt-4o",
+        "provider_key": "litellm_openrouter_model",
+        "examples": "openrouter/openai/gpt-4o, openrouter/anthropic/claude-3.5-sonnet",
+        "api_key_env": "OPENROUTER_API_KEY",
+        "api_label": "OpenRouter",
+    },
+    {
+        "id": "ollama",
+        "label": "Ollama (Local)",
+        "default_model": "ollama/deepseek-r1",
+        "provider_key": "litellm_ollama_model",
+        "examples": "ollama/llama3.2, ollama/deepseek-r1",
+        "api_base_env": "OLLAMA_HOST",
+        "default_api_base": "http://localhost:11434",
+        "supports_model_listing": True,
+    },
+    {
+        "id": "custom",
+        "label": "Custom LiteLLM Provider",
+        "default_model": "",
+        "provider_key": "litellm_custom_model",
+        "examples": "together_ai/meta-llama/Llama-3.3-70B-Instruct-Turbo, groq/llama-3.3-70b-versatile",
+    },
+]
+
+def _prompt_litellm_provider() -> Dict[str, Any]:
+    """Prompt for a LiteLLM provider selection and remember it."""
+    provider_ids = [provider["id"] for provider in LITELLM_PROVIDERS]
+    remembered = _get_saved_pref("litellm_provider", provider_ids[0])
+
+    print("\nLiteLLM providers:")
+    for idx, provider in enumerate(LITELLM_PROVIDERS, start=1):
+        suffix = " (saved)" if provider["id"] == remembered else ""
+        print(f"{idx}. {provider['label']}{suffix}")
+
+    entered = input(f"\nChoose provider [default: {remembered}]: ").strip()
+    chosen = None
+    if entered:
+        if entered.isdigit():
+            index = int(entered) - 1
+            if 0 <= index < len(LITELLM_PROVIDERS):
+                chosen = LITELLM_PROVIDERS[index]
+            else:
+                print(f"Invalid selection '{entered}'.")
+        else:
+            chosen = next((provider for provider in LITELLM_PROVIDERS if provider["id"] == entered.lower()), None)
+            if chosen is None:
+                chosen = next((provider for provider in LITELLM_PROVIDERS if provider["label"].lower() == entered.lower()), None)
+
+    if chosen is None:
+        chosen = next((provider for provider in LITELLM_PROVIDERS if provider["id"] == remembered), LITELLM_PROVIDERS[0])
+
+    _set_saved_pref("litellm_provider", chosen["id"])
+    return chosen
+
+def _resolve_litellm_model(provider: Dict[str, Any]) -> Tuple[str, Optional[str]]:
+    """Resolve the selected LiteLLM model string and optional api_base."""
+    api_base = None
+    if provider.get("supports_model_listing"):
+        ollama_host = os.getenv(provider.get("api_base_env", ""), provider.get("default_api_base", ""))
+        print(f"\nUsing Ollama host for LiteLLM: {ollama_host}")
+        use_custom_host = input("Use a different Ollama host? (y/n): ").strip().lower()
+        if use_custom_host in ('y', 'yes'):
+            custom_host = input("Enter the Ollama host (e.g., http://localhost:11434): ").strip()
+            if custom_host:
+                ollama_host = custom_host
+        api_base = ollama_host
+
+        from ollama import Client
+        client = Client(host=ollama_host)
+        raw_model_name = _choose_ollama_model(client, provider["provider_key"], f"{provider['label']} via LiteLLM")
+        if raw_model_name.startswith("ollama/"):
+            model_name = raw_model_name
+        else:
+            model_name = f"ollama/{raw_model_name}"
+        return model_name, api_base
+
+    if provider["id"] == "custom":
+        remembered = _get_saved_model(provider["provider_key"], "")
+        prompt = "\nLiteLLM model string"
+        if remembered:
+            prompt += f" [{remembered}]"
+        prompt += " (provider/model-name): "
+        entered = input(prompt).strip()
+        model_name = entered or remembered
+        if not model_name:
+            raise ValueError("A LiteLLM provider/model string is required.")
+        _set_saved_model(provider["provider_key"], model_name)
+        custom_api_base = input("Custom API base (optional, press Enter to skip): ").strip()
+        api_base = custom_api_base or None
+        return model_name, api_base
+
+    model_name = _prompt_model_name(
+        provider["provider_key"],
+        provider["default_model"],
+        f"{provider['label']} via LiteLLM",
+        provider.get("examples", ""),
+    )
+    return model_name, api_base
+
+def analyze_with_litellm(csv_files):
+    """Analyze health data using a LiteLLM-backed provider selection flow."""
+    if litellm_completion is None:
+        print("LiteLLM is not installed. Run: pip install litellm")
+        return
+
+    data_summary, prompt = _prepare_ai_data(csv_files)
+    if prompt is None:
+        return
+
+    try:
+        provider = _prompt_litellm_provider()
+        if provider.get("api_key_env"):
+            key = _get_or_prompt_key(provider["api_key_env"], provider.get("api_label", provider["label"]))
+            if not key:
+                return
+            if provider["id"] == "gemini":
+                os.environ["GOOGLE_API_KEY"] = key
+
+        model_name, api_base = _resolve_litellm_model(provider)
+        _status(f"Using LiteLLM with model: {model_name}")
+
+        request_kwargs = {
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.3,
+            "stream": True,
+        }
+        if api_base:
+            request_kwargs["api_base"] = api_base
+
+        _status("Contacting provider through LiteLLM...")
+        collected = []
+        start_time = time.time()
+        try:
+            with spinner("Contacting LiteLLM provider"):
+                stream = litellm_completion(**request_kwargs)
+            print("Streaming analysis...\n")
+            for chunk in stream:
+                piece = None
+                try:
+                    piece = chunk.choices[0].delta.content
+                except Exception:
+                    try:
+                        piece = chunk.get('choices', [{}])[0].get('delta', {}).get('content')
+                    except Exception:
+                        piece = None
+                if piece:
+                    collected.append(piece)
+                    print(piece, end='', flush=True)
+        except Exception as stream_err:
+            print(f"\nStreaming interrupted: {stream_err}\nFalling back to non-streaming request...")
+            request_kwargs.pop("stream", None)
+            with spinner("Waiting for LiteLLM response"):
+                response = litellm_completion(**request_kwargs)
+            try:
+                content = response.choices[0].message.content or ''
+            except Exception:
+                content = ''
+            if content:
+                collected.append(content)
+                print(content)
+
+        if len(collected) == 0:
+            request_kwargs.pop("stream", None)
+            _status("No streamed content received; requesting non-stream response...")
+            with spinner("Waiting for LiteLLM response"):
+                response = litellm_completion(**request_kwargs)
+            try:
+                content = response.choices[0].message.content or ''
+            except Exception:
+                content = ''
+            if content:
+                collected.append(content)
+                print(content)
+
+        print("\n\nDone in {:.1f}s".format(time.time() - start_time))
+        final_text = _strip_reasoning_blocks("".join(collected))
+        _prompt_and_save_analysis(final_text, f"LiteLLM: {model_name}", "health_analysis_litellm")
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
+    except ImportError:
+        print("Ollama support requires the 'ollama' package. Run: pip install ollama")
+    except Exception as e:
+        print(f"Error during LiteLLM analysis: {e}")
 
 def reset_preferences():
     """Delete saved preferences file and clear in-memory overrides."""
@@ -2974,14 +3207,15 @@ def main():
         print("16. AI: Analyze with LM Studio")
         print("17. AI: Analyze with Jan")
         print("18. AI: Analyze with LocalAI")
+        print("19. AI: Analyze with LiteLLM (Universal)")
         # Settings and help
-        print("19. AI Settings")
-        print("20. Reset Preferences")
-        print("21. View Change Log")
-        print("22. OpenClaw Setup Guide")
-        print("23. Exit")
+        print("20. AI Settings")
+        print("21. Reset Preferences")
+        print("22. View Change Log")
+        print("23. OpenClaw Setup Guide")
+        print("24. Exit")
 
-        choice = input("Enter your choice (0-23): ")
+        choice = input("Enter your choice (0-24): ")
         
         # List of available data files and their types
         data_files = [
@@ -2994,7 +3228,7 @@ def main():
         ]
         
         # Any analysis or AI option requires export.xml
-        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18'}:
+        if choice in {'0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19'}:
             if not ensure_export_available():
                 continue
 
@@ -3038,6 +3272,8 @@ def main():
         elif choice == '18':
             analyze_with_localai(data_files)
         elif choice == '19':
+            analyze_with_litellm(data_files)
+        elif choice == '20':
             print("\nAI Settings:")
             print("Current default temperature: 0.3")
             print("\nTemperature Guide:")
@@ -3047,17 +3283,17 @@ def main():
             print("0.7-1.0: Most varied and exploratory analysis")
             print("\nRecommended: 0.3 for health data analysis")
             input("\nPress Enter to continue...")
-        elif choice == '20':
+        elif choice == '21':
             confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
             if confirm in ('y', 'yes'):
                 reset_preferences()
             else:
                 print("Cancelled.")
-        elif choice == '21':
-            show_changelog()
         elif choice == '22':
-            show_openclaw_guide()
+            show_changelog()
         elif choice == '23':
+            show_openclaw_guide()
+        elif choice == '24':
             print("Goodbye!")
             break
         else:
