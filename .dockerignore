@@ -1,0 +1,9 @@
+.git
+.github
+assets
+skills
+*.md
+LICENSE
+.DS_Store
+__pycache__
+*.pyc

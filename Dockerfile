@@ -13,10 +13,8 @@ ENV OUTPUT_DIR=/out
 # Create the default output directory
 RUN mkdir -p /out
 
-# Copy the requirements file
-COPY requirements.txt .
-
-# Install the dependencies
+# Copy the Docker-specific requirements (excludes PyQt6, py2app)
+COPY requirements-docker.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the source code
