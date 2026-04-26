@@ -1,4 +1,6 @@
 # Apple Health A.I. Data Analyzer 🍎🤖
+<img width="1983" height="793" alt="ChatGPT Image Apr 26, 2026, 05_23_30 PM" src="https://github.com/user-attachments/assets/97700198-724b-4c98-a54c-4f5a7097733f" />
+
 
 **Privacy-First Health Intelligence: Turn your Apple Health exports into actionable insights with DeepSeek-R1, ChatGPT, and local LLMs.**
 
