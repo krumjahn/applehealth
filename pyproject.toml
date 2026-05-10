@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "healthai"
+dynamic = ["version"]
+description = "Privacy-first Apple Health data analyzer powered by AI"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.0.0",
+    "ollama>=0.1.0",
+    "anthropic>=0.36.0",
+    "google-generativeai>=0.7.2",
+    "litellm!=1.82.7,!=1.82.8",
+]
+
+[project.scripts]
+healthai = "healthai.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "healthai.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
