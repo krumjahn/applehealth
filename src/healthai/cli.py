@@ -3559,6 +3559,10 @@ def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
     """
+    parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
+    parser.add_argument("--version", action="version", version=f"healthai {__version__}")
+    parser.parse_known_args()
+
     _print_banner()
     out_dir = get_output_dir()
     _box([
@@ -3716,6 +3720,7 @@ if __name__ == "__main__":
     # Parse optional CLI args for export path and output directory
     try:
         parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
+        parser.add_argument("--version", action="version", version=f"healthai {__version__}")
         parser.add_argument('-e', '--export', help='Path to export.xml or a directory containing it')
         parser.add_argument('-o', '--out', help='Directory to write CSV/PNG/MD outputs (default: current directory or OUTPUT_DIR env)')
         parser.add_argument('path', nargs='?', help='Optional positional path to export.xml or containing directory')
