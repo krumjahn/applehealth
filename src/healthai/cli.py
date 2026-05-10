@@ -3520,6 +3520,47 @@ from healthai.ui import print_banner as _print_banner, print_box as _box, print_
 from healthai.ui import _W, _D, _C, _G, _Y, _X
 
 
+SLASH_COMMANDS = [
+    ("/diagnose",  "Diagnose export & generate debug report"),
+    ("/steps",     "Analyze steps"),
+    ("/distance",  "Analyze distance"),
+    ("/heartrate", "Analyze heart rate"),
+    ("/weight",    "Analyze weight"),
+    ("/sleep",     "Analyze sleep"),
+    ("/workouts",  "Analyze workouts"),
+    ("/csv",       "Convert XML → CSV (full dump)"),
+    ("/json",      "Convert XML → JSON (full dump)"),
+    ("/settings",  "AI settings"),
+    ("/reset",     "Reset preferences"),
+    ("/changelog", "View change log"),
+    ("/openclaw",  "OpenClaw setup guide"),
+    ("/setup",     "Re-run setup wizard"),
+    ("/help",      "Show this panel"),
+    ("/exit",      "Quit"),
+]
+
+
+def _print_help(provider_label: str) -> None:
+    print(f"\n  {_D}─── Chat {'─' * 43}{_X}")
+    print(f"  Type anything to analyze your health data with {_W}{provider_label}{_X}.")
+    print(f"  {_D}Example: \"What does my sleep pattern look like?\"{_X}")
+    print(f"\n  {_D}─── Commands {'─' * 39}{_X}")
+    cmd_width = max(len(c) for c, _ in SLASH_COMMANDS)
+    for cmd, desc in SLASH_COMMANDS:
+        print(f"  {_C}{cmd:<{cmd_width}}{_X}  {_D}{desc}{_X}")
+    print()
+
+
+def _handle_ai_settings() -> None:
+    prefs = _load_ai_prefs()
+    print(f"\n  {_W}Current Settings:{_X}")
+    provider_id = prefs.get("default_provider", "not set")
+    print(f"  {_D}Provider:{_X}    {provider_id}")
+    print(f"  {_D}Output dir:{_X}  {prefs.get('output_dir', 'not set')}")
+    print(f"  {_D}Export XML:{_X}  {prefs.get('export_xml_path', 'not set')}")
+    input(f"\n  Press Enter to continue...")
+
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
@@ -3560,126 +3601,68 @@ def main():
     ])
     print(f"\n  {_D}Tired of the CLI? 🫀  {_C}https://applehealthdata.com{_X}")
 
+    from healthai.chat import get_configured_provider, get_provider_label, chat
+
+    provider_id = get_configured_provider()
+    provider_label = get_provider_label(provider_id)
+
+    _print_help(provider_label)
+
     while True:
-        _section("Data & Export")
-        _item(1,  "Diagnose Export & Generate Debug Report")
-        _item(2,  "Analyze Steps")
-        _item(3,  "Analyze Distance")
-        _item(4,  "Analyze Heart Rate")
-        _item(5,  "Analyze Weight")
-        _item(6,  "Analyze Sleep")
-        _item(7,  "Analyze Workouts")
-        _item(8,  "Convert XML → CSV  (Full Dump)")
-        _item(9,  "Convert XML → JSON (Full Dump)")
-
-        _section("Cloud AI")
-        _item(10, "Analyze All Data   (OpenAI)")
-        _item(11, "Analyze with Claude  (Anthropic)")
-        _item(12, "Analyze with Gemini  (Google)")
-        _item(13, "Analyze with Grok    (xAI)")
-        _item(14, "Analyze with OpenRouter")
-
-        _section("Local AI")
-        _item(20, "Analyze with Ollama  (Local)")
-        _item(21, "Analyze with Ollama  (Remote)")
-        _item(22, "Analyze with LM Studio")
-        _item(23, "Analyze with Jan")
-        _item(24, "Analyze with LocalAI")
-        _item(25, "Analyze with Msty")
-        _item(26, "Analyze with LiteLLM (Universal)")
-
-        _section("Settings & Help")
-        _item(30, "AI Settings")
-        _item(31, "Reset Preferences")
-        _item(32, "View Change Log")
-        _item(33, "OpenClaw Setup Guide")
-        _item(34, "Exit")
-
-        choice = input("Enter your choice: ").strip()
-        
-        # List of available data files and their types
-        data_files = [
-            ('steps_data.csv', 'Steps'),
-            ('distance_data.csv', 'Distance'),
-            ('heart_rate_data.csv', 'Heart Rate'),
-            ('weight_data.csv', 'Weight'),
-            ('sleep_data.csv', 'Sleep'),
-            ('workout_data.csv', 'Workout')
-        ]
-        
-        # Any analysis or AI option requires export.xml
-        if choice in {'1','2','3','4','5','6','7','8','9','10','11','12','13','14','20','21','22','23','24','25','26'}:
-            if not ensure_export_available():
-                continue
-
-        if choice == '1':
-            export_path = resolve_export_xml()
-            generate_debug_reports(export_path)
-        elif choice == '2':
-            analyze_steps()
-        elif choice == '3':
-            analyze_distance()
-        elif choice == '4':
-            analyze_heart_rate()
-        elif choice == '5':
-            analyze_weight()
-        elif choice == '6':
-            analyze_sleep()
-        elif choice == '7':
-            analyze_workouts()
-        elif choice == '8':
-            convert_xml_to_csv()
-        elif choice == '9':
-            convert_xml_to_json()
-        elif choice == '10':
-            analyze_with_chatgpt(data_files)
-        elif choice == '11':
-            analyze_with_claude(data_files)
-        elif choice == '12':
-            analyze_with_gemini(data_files)
-        elif choice == '13':
-            analyze_with_grok(data_files)
-        elif choice == '14':
-            analyze_with_openrouter(data_files)
-        elif choice == '20':
-            analyze_with_ollama(data_files)
-        elif choice == '21':
-            analyze_with_external_ollama(data_files)
-        elif choice == '22':
-            analyze_with_lmstudio(data_files)
-        elif choice == '23':
-            analyze_with_jan(data_files)
-        elif choice == '24':
-            analyze_with_localai(data_files)
-        elif choice == '25':
-            analyze_with_msty(data_files)
-        elif choice == '26':
-            analyze_with_litellm(data_files)
-        elif choice == '30':
-            print("\nAI Settings:")
-            print("Current default temperature: 0.3")
-            print("\nTemperature Guide:")
-            print("0.0-0.3: Best for statistical analysis and consistent insights")
-            print("0.3-0.5: Balanced analysis with some variation")
-            print("0.5-0.7: More creative insights and patterns")
-            print("0.7-1.0: Most varied and exploratory analysis")
-            print("\nRecommended: 0.3 for health data analysis")
-            input("\nPress Enter to continue...")
-        elif choice == '31':
-            confirm = input("This will delete saved model/output/export preferences. Proceed? (y/n): ").strip().lower()
-            if confirm in ('y', 'yes'):
-                reset_preferences()
-            else:
-                print("Cancelled.")
-        elif choice == '32':
-            show_changelog()
-        elif choice == '33':
-            show_openclaw_guide()
-        elif choice == '34':
-            print("Goodbye!")
+        try:
+            raw = input(f"  {_C}›{_X} ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n  {_D}Goodbye 🫀{_X}")
             break
+
+        if not raw:
+            continue
+
+        if raw.startswith("/"):
+            cmd = raw.split()[0].lower()
+
+            if cmd == "/exit":
+                print(f"\n  {_D}Goodbye 🫀{_X}")
+                break
+            elif cmd == "/help":
+                _print_help(provider_label)
+            elif cmd == "/diagnose":
+                export_path = resolve_export_xml()
+                generate_debug_reports(export_path)
+            elif cmd == "/steps":
+                analyze_steps()
+            elif cmd == "/distance":
+                analyze_distance()
+            elif cmd == "/heartrate":
+                analyze_heart_rate()
+            elif cmd == "/weight":
+                analyze_weight()
+            elif cmd == "/sleep":
+                analyze_sleep()
+            elif cmd == "/workouts":
+                analyze_workouts()
+            elif cmd == "/csv":
+                convert_xml_to_csv()
+            elif cmd == "/json":
+                convert_xml_to_json()
+            elif cmd == "/settings":
+                _handle_ai_settings()
+            elif cmd == "/reset":
+                confirm = input(f"  {_D}This will delete saved preferences. Proceed? (y/n):{_X} ").strip().lower()
+                if confirm == "y":
+                    reset_preferences()
+            elif cmd == "/changelog":
+                show_changelog()
+            elif cmd == "/openclaw":
+                show_openclaw_guide()
+            elif cmd == "/setup":
+                run_setup()
+                provider_id = get_configured_provider()
+                provider_label = get_provider_label(provider_id)
+            else:
+                print(f"  {_D}Unknown command. Type /help to see available commands.{_X}")
         else:
-            print("Invalid choice. Please try again.")
+            chat(raw)
 
 def check_requirements():
     """Check if all required packages are installed"""
