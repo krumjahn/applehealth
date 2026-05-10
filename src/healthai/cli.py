@@ -3559,9 +3559,26 @@ def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
     """
+    global _export_xml_path, _output_dir
     parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
     parser.add_argument("--version", action="version", version=f"healthai {__version__}")
-    parser.parse_known_args()
+    parser.add_argument("-e", "--export", help="Path to export.xml or a directory containing it")
+    parser.add_argument("-o", "--out", help="Directory to write CSV/PNG/MD outputs")
+    parser.add_argument("path", nargs="?", help="Optional positional path to export.xml")
+    args = parser.parse_args()
+    chosen = args.export or args.path
+    if chosen:
+        _export_xml_path = os.path.abspath(os.path.expanduser(chosen))
+        try:
+            _set_saved_pref("export_xml", _export_xml_path)
+        except Exception:
+            pass
+    if args.out:
+        _output_dir = os.path.abspath(os.path.expanduser(args.out))
+        try:
+            _set_saved_pref("output_dir", _output_dir)
+        except Exception:
+            pass
 
     _print_banner()
     out_dir = get_output_dir()
@@ -3717,30 +3734,6 @@ def check_env():
     return True
 
 if __name__ == "__main__":
-    # Parse optional CLI args for export path and output directory
-    try:
-        parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
-        parser.add_argument("--version", action="version", version=f"healthai {__version__}")
-        parser.add_argument('-e', '--export', help='Path to export.xml or a directory containing it')
-        parser.add_argument('-o', '--out', help='Directory to write CSV/PNG/MD outputs (default: current directory or OUTPUT_DIR env)')
-        parser.add_argument('path', nargs='?', help='Optional positional path to export.xml or containing directory')
-        args = parser.parse_args()
-        chosen = args.export or args.path
-        if chosen:
-            _export_xml_path = os.path.abspath(os.path.expanduser(chosen))
-            try:
-                _set_saved_pref('export_xml', _export_xml_path)
-            except Exception:
-                pass
-        if args.out:
-            _output_dir = os.path.abspath(os.path.expanduser(args.out))
-            try:
-                _set_saved_pref('output_dir', _output_dir)
-            except Exception:
-                pass
-    except SystemExit:
-        raise
-
     check_requirements()
     if not check_env():
         print("\nContinuing without AI analysis capabilities...")
