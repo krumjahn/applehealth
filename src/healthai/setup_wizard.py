@@ -54,6 +54,7 @@ def _divider():
 
 def run_setup() -> dict:
     """Interactive first-run setup. Returns completed prefs dict."""
+    print_banner()
     print(f"\n  🫀 {_W}Welcome to healthai setup!{_X}")
     print(f"  {_D}This only runs once. You can re-run it with: healthai --setup{_X}\n")
 
