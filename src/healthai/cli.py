@@ -1987,13 +1987,20 @@ def analyze_with_chatgpt(csv_files):
         client = openai.OpenAI(api_key=api_key, timeout=60.0, max_retries=1)
 
         _status("Preparing request and contacting OpenAI...")
+        messages = [
+            {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
+            {"role": "user", "content": prompt}
+        ]
+        user_question = os.environ.get("HEALTHAI_USER_QUESTION", "").strip()
+        if user_question:
+            for m in messages:
+                if m.get("role") == "user":
+                    m["content"] = f"User question: {user_question}\n\n{m['content']}"
+                    break
         with spinner("Contacting OpenAI"):
             stream = client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "system", "content": "You are a health data analyst with strong technical skills. Provide detailed analysis with a focus on data patterns, statistical insights, and code-friendly recommendations. Use markdown formatting for technical terms."},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages,
                 temperature=0.3,
                 max_tokens=2000,
                 stream=True,
