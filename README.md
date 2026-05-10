@@ -14,6 +14,24 @@ https://github.com/user-attachments/assets/98ad8fc3-ed1d-4395-80c5-eb66a8cceb61
 
 ---
 
+## Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/krumjahn/applehealth/main/install.sh | bash
+```
+
+Or install directly with pipx:
+
+```bash
+pipx install healthai
+```
+
+Then run:
+
+```bash
+healthai
+```
+
 ### 🚀 **Tired of the CLI?**
 **Get the Pro Version:** For instant, interactive analysis and one-click exports without touching a terminal, visit **[applehealthdata.com](https://applehealthdata.com)**.
 
