@@ -3565,6 +3565,7 @@ def main():
     parser.add_argument("-e", "--export", help="Path to export.xml or a directory containing it")
     parser.add_argument("-o", "--out", help="Directory to write CSV/PNG/MD outputs")
     parser.add_argument("path", nargs="?", help="Optional positional path to export.xml")
+    parser.add_argument("--setup", action="store_true", help="Re-run first-time setup wizard")
     args = parser.parse_args()
     chosen = args.export or args.path
     if chosen:
@@ -3579,6 +3580,12 @@ def main():
             _set_saved_pref("output_dir", _output_dir)
         except Exception:
             pass
+
+    from healthai.setup_wizard import is_setup_complete, run_setup
+    if getattr(args, 'setup', False) or not is_setup_complete():
+        run_setup()
+        if getattr(args, 'setup', False):
+            return
 
     _print_banner()
     out_dir = get_output_dir()
