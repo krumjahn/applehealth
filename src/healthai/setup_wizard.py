@@ -2,17 +2,7 @@ import os
 import json
 
 from healthai.ui import _C, _W, _D, _G, _Y, _X, print_banner
-
-PROVIDERS = [
-    {"id": "openai",     "label": "OpenAI (ChatGPT)",        "needs_key": True,  "key_env": "OPENAI_API_KEY"},
-    {"id": "claude",     "label": "Claude (Anthropic)",      "needs_key": True,  "key_env": "ANTHROPIC_API_KEY"},
-    {"id": "gemini",     "label": "Gemini (Google)",         "needs_key": True,  "key_env": "GOOGLE_API_KEY"},
-    {"id": "grok",       "label": "Grok (xAI)",              "needs_key": True,  "key_env": "XAI_API_KEY"},
-    {"id": "openrouter", "label": "OpenRouter",              "needs_key": True,  "key_env": "OPENROUTER_API_KEY"},
-    {"id": "ollama",     "label": "Ollama (Local — free)",   "needs_key": False, "key_env": None},
-    {"id": "lmstudio",   "label": "LM Studio (Local — free)","needs_key": False, "key_env": None},
-    {"id": "litellm",    "label": "LiteLLM (Universal)",     "needs_key": False, "key_env": None},
-]
+from healthai.models import pick_model
 
 
 def _prefs_path() -> str:
@@ -33,7 +23,7 @@ def _load_prefs() -> dict:
     return {}
 
 
-def _save_prefs(prefs: dict):
+def _save_prefs(prefs: dict) -> None:
     with open(_prefs_path(), "w") as f:
         json.dump(prefs, f, indent=2)
 
@@ -48,7 +38,7 @@ def _ask(prompt: str, default: str = "") -> str:
         return default
 
 
-def _divider():
+def _divider() -> None:
     print(f"\n  {_D}{'─' * 50}{_X}\n")
 
 
@@ -60,47 +50,41 @@ def run_setup() -> dict:
 
     prefs = _load_prefs()
 
-    # ── Step 1: LLM Provider ─────────────────────────────────────
+    # ── Step 1: AI Model ─────────────────────────────────────────
     _divider()
-    print(f"  {_W}Step 1 of 4 — Choose your AI provider{_X}\n")
-    for i, p in enumerate(PROVIDERS, 1):
-        local = f"  {_G}(no API key needed){_X}" if not p["needs_key"] else ""
-        print(f"    {_D}{i}.{_X}  {p['label']}{local}")
-
-    while True:
-        raw = _ask("\nEnter number", "1")
-        if raw.isdigit() and 1 <= int(raw) <= len(PROVIDERS):
-            provider = PROVIDERS[int(raw) - 1]
-            break
-        print(f"  {_Y}Please enter a number between 1 and {len(PROVIDERS)}{_X}")
-
-    prefs["default_provider"] = provider["id"]
-    print(f"\n  {_G}✓{_X} Provider set to: {provider['label']}")
+    print(f"  {_W}Step 1 of 4 — Choose your AI model{_X}")
+    current = prefs.get("default_model") or prefs.get("default_provider", "")
+    model_str, key_env = pick_model(current_model=current)
+    if not model_str:
+        model_str = "gpt-4o"
+        key_env = "OPENAI_API_KEY"
+    prefs["default_model"] = model_str
+    print(f"\n  {_G}✓{_X} Model set to: {model_str}")
 
     # ── Step 2: API Key ──────────────────────────────────────────
-    if provider["needs_key"]:
+    if key_env:
         _divider()
         print(f"  {_W}Step 2 of 4 — API Key{_X}")
-        print(f"  {_D}Set {provider['key_env']} in your shell, or paste it here.{_X}")
+        print(f"  {_D}Set {key_env} in your shell, or paste it here.{_X}")
         print(f"  {_D}(Stored in ~/.applehealth/ai_prefs.json — never sent anywhere){_X}\n")
 
-        existing = os.environ.get(provider["key_env"], "") or prefs.get(provider["key_env"], "")
+        existing = os.environ.get(key_env, "") or prefs.get(key_env, "")
         if existing:
             print(f"  {_G}✓{_X} Found existing key ending in ...{existing[-4:]}")
             keep = _ask("Keep it? (y/n)", "y").lower()
             if keep != "n":
-                prefs[provider["key_env"]] = existing
+                prefs[key_env] = existing
             else:
                 key = _ask("Paste new API key")
                 if key:
-                    prefs[provider["key_env"]] = key
+                    prefs[key_env] = key
         else:
             key = _ask("Paste API key")
             if key:
-                prefs[provider["key_env"]] = key
+                prefs[key_env] = key
     else:
-        print(f"\n  {_G}✓{_X} No API key needed for {provider['label']}")
-        if provider["id"] == "ollama":
+        print(f"\n  {_G}✓{_X} No API key needed for this model")
+        if "ollama" in model_str:
             try:
                 import ollama as _ol
                 _ol.Client().list()
