@@ -1,12 +1,7 @@
 import os
 import json
 
-_C  = "\033[38;5;81m"
-_W  = "\033[1;37m"
-_D  = "\033[2;37m"
-_G  = "\033[38;5;82m"
-_Y  = "\033[38;5;226m"
-_X  = "\033[0m"
+from healthai.ui import _C, _W, _D, _G, _Y, _X, print_banner
 
 PROVIDERS = [
     {"id": "openai",     "label": "OpenAI (ChatGPT)",        "needs_key": True,  "key_env": "OPENAI_API_KEY"},
