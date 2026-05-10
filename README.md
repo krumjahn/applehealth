@@ -1,8 +1,6 @@
 # 🫀 healthai — Apple Health AI Analyzer
-<img width="1983" height="793" alt="ChatGPT Image Apr 26, 2026, 05_23_30 PM" src="https://github.com/user-attachments/assets/97700198-724b-4c98-a54c-4f5a7097733f" />
 
-
-**🫀 Privacy-First Health Intelligence: Turn your Apple Health exports into actionable insights with DeepSeek-R1, ChatGPT, and local LLMs.**
+**A terminal AI assistant for your Apple Health data. Chat with 8 years of personal health metrics using any LLM — local or cloud.**
 
 [![GitHub stars](https://img.shields.io/github/stars/krumjahn/applehealth.svg?style=social)](https://github.com/krumjahn/applehealth/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -11,7 +9,7 @@
 [![DeepSeek-R1 Supported](https://img.shields.io/badge/DeepSeek--R1-Local%20AI-blueviolet)](https://ollama.com/library/deepseek-r1)
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-ff6b35.svg)](https://clawhub.ai/krumjahn/apple-health-export-analyzer)
 
-https://github.com/user-attachments/assets/98ad8fc3-ed1d-4395-80c5-eb66a8cceb61
+![healthai CLI preview](assets/cli-preview.png)
 
 ---
 
@@ -33,26 +31,27 @@ Then run:
 healthai
 ```
 
-On first launch, a setup wizard walks you through choosing your AI provider (OpenAI, Claude, Gemini, Grok, Ollama, and more), setting your API key, and pointing to your `export.xml`. Re-run it any time with `healthai --setup`.
+On first launch, a setup wizard walks you through choosing your AI model (GPT-4o, Claude, Gemini, DeepSeek-R1, and 50+ more), setting your API key, and pointing to your `export.xml`. Re-run it any time with `healthai --setup`.
 
-### 🚀 **Tired of the CLI?**
-**Get the Pro Version:** For instant, interactive analysis and one-click exports without touching a terminal, visit **[applehealthdata.com](https://applehealthdata.com)**.
+### 🚀 **Prefer a GUI?**
+Visit **[applehealthdata.com](https://applehealthdata.com)** for instant, interactive analysis without the terminal.
 
 ---
 
 ## 🧐 What is this?
-This is an open-source technical toolkit for solopreneurs, researchers, and biohackers who want to **own their health data**. 
 
-It transforms the complex Apple Health `export.xml` into clean **CSV/JSON** datasets and provides a direct bridge to **AI reasoning engines**. Whether you want to use ChatGPT or run **100% private local analysis with DeepSeek-R1**, this tool handles the heavy lifting of data parsing and visualization.
+A purpose-built CLI that turns your Apple Health `export.xml` into a conversational AI session. Think of it as having a personal health analyst in your terminal — one that knows your exact data and can answer questions, spot trends, and generate charts without sending anything to a third party unless you choose to.
+
+It's built for developers, biohackers, and researchers who want **full control** over their health data pipeline.
 
 ## ✨ Key Features
-- 💬 **Chat Interface**: Ask questions about your health data in plain English — no commands to memorize.
-- 💍 **Smart Ring Integration**: Unified analysis for **Oura**, **Whoop**, and **Samsung Ring** via Apple Health sync.
-- 🧠 **DeepSeek-R1 & Local AI**: Run 100% private health audits using Ollama (no data leaves your machine).
-- 📊 **Automated Visualizations**: Instantly generate charts for heart rate cycles, sleep patterns, and workout intensity.
-- 📤 **High-Fidelity Export**: XML → CSV/JSON conversion that preserves all metadata (Record, Workout, ActivitySummary).
+- 💬 **Chat REPL**: Ask questions in plain English. `"What were my most active months last year?"` — just type it.
+- 🧠 **50+ AI Models**: GPT-4o, Claude, Gemini, DeepSeek-R1, Grok, Mistral, Llama, and any Ollama local model.
+- 🔒 **100% Private Mode**: Run DeepSeek-R1 or Llama 3 locally via Ollama — no data leaves your machine.
+- 📊 **Automated Charts**: Heart rate cycles, sleep patterns, workout intensity — generated with one slash command.
+- 📤 **High-Fidelity Export**: XML → CSV/JSON preserving all metadata (Record, Workout, ActivitySummary).
+- 💍 **Smart Ring Integration**: Unified view of **Oura**, **Whoop**, and **Samsung Ring** data via Apple Health sync.
 - 🔄 **WHOOP Integration**: Specialized support for augmenting Apple Health data with WHOOP metrics.
-- 🧪 **Multi-Model Support**: Native support for ChatGPT, Claude, Gemini, Grok, Ollama, LM Studio, and more.
 
 ## 💬 Chat with Your Health Data
 
@@ -221,11 +220,12 @@ docker run -it \
   applehealth
 ```
 
-## 🌟 Visuals & Charts
-![xml-csv-logo](assets/xml-csv-logo.png)
+## 🌟 Charts & Output Examples
+
+https://github.com/user-attachments/assets/98ad8fc3-ed1d-4395-80c5-eb66a8cceb61
+
 ![workouts](https://github.com/user-attachments/assets/6c373d3e-e038-4428-a8be-7c86c973a662)
 ![heartrate](https://github.com/user-attachments/assets/7f739661-f822-49e7-b79c-209c5164ecdc)
-![lm-ollama-support](assets/lm-ollama-support.png)
 
 ## 🤝 Contributing & Community
 Join our community of builders! If you improve the parser or add a new visualization, please submit a PR.
