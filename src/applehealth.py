@@ -3508,54 +3508,100 @@ def show_openclaw_guide():
     print("\n" + "=" * 50 + "\n")
     input("Press Enter to return to menu...")
 
+# ── Terminal color codes ──────────────────────────────────────────────────────
+_R  = "\033[38;5;196m"   # red
+_P  = "\033[38;5;197m"   # red-pink
+_P2 = "\033[38;5;204m"   # salmon
+_P3 = "\033[38;5;211m"   # light pink
+_W  = "\033[1;37m"       # bold white
+_D  = "\033[2;37m"       # dim white
+_C  = "\033[38;5;81m"    # cyan
+_X  = "\033[0m"          # reset
+
+_BANNER_LINES = [
+    r"    _    ____  ____  _     _____   _   _ _____    _    _   _____ _   _ ",
+    r"   / \  |  _ \|  _ \| |   | ____| | | | | ____|  / \  | | |_   _| | | |",
+    r"  / _ \ | |_) | |_) | |   |  _|   | |_| |  _|   / _ \ | |   | | | |_| |",
+    r" / ___ \|  __/|  __/| |___| |___  |  _  | |___ / ___ \| |___| | |  _  |",
+    r"/_/   \_\_|   |_|   |_____|_____| |_| |_|_____/_/   \_\_____|_| |_| |_|",
+]
+_BANNER_COLORS = [_R, _R, _P, _P2, _P3]
+
+
+def _print_banner():
+    print()
+    for color, line in zip(_BANNER_COLORS, _BANNER_LINES):
+        print(f"  {color}{line}{_X}")
+    tagline = "Privacy-First Health Intelligence  ·  AI-Powered  ·  Runs Locally"
+    print(f"  {_D}{tagline}{_X}")
+    print()
+
+
+def _box(lines):
+    width = max(len(l) for l in lines) + 2
+    print(f"  {_C}┌{'─' * width}┐{_X}")
+    for line in lines:
+        pad = width - len(line) - 1
+        print(f"  {_C}│{_X} {line}{' ' * pad}{_C}│{_X}")
+    print(f"  {_C}└{'─' * width}┘{_X}")
+
+
+def _section(label):
+    print(f"\n  {_W}{label}{_X}")
+    print(f"  {_D}{'─' * (len(label) + 20)}{_X}")
+
+
+def _item(num, label):
+    print(f"  {_D}{num:>2}.{_X}  {label}")
+
+
 def main():
     """
     Main function providing an interactive menu to choose which health metric to analyze.
     """
-    # Greet and show where outputs will be saved by default
+    _print_banner()
     out_dir = get_output_dir()
-    print(f"\nApple Health Data Analyzer v{__version__}")
-    print("-" * 40)
-    print("🚀 Tired of the CLI? Get instant, interactive analysis at:")
-    print("👉 https://applehealthdata.com")
-    print("-" * 40)
-    print(f"Outputs will be saved to: {out_dir}")
-    print("Tip: You can drag-and-drop your export.xml into this window when prompted.")
+    _box([
+        f"* Apple Health Data Analyzer  v{__version__}",
+        f"  Outputs → {out_dir}",
+        f"  Tip: drag-and-drop export.xml when prompted",
+    ])
+    print(f"\n  {_D}Tired of the CLI?  {_C}https://applehealthdata.com{_X}")
+
     while True:
-        print("\nWhat would you like to do?")
-        print("\nData & Export")
-        print("1. Diagnose Export & Generate Debug Report")
-        print("2. Analyze Steps")
-        print("3. Analyze Distance")
-        print("4. Analyze Heart Rate")
-        print("5. Analyze Weight")
-        print("6. Analyze Sleep")
-        print("7. Analyze Workouts")
-        print("8. Convert XML → CSV (Full Dump)")
-        print("9. Convert XML → JSON (Full Dump)")
+        _section("Data & Export")
+        _item(1,  "Diagnose Export & Generate Debug Report")
+        _item(2,  "Analyze Steps")
+        _item(3,  "Analyze Distance")
+        _item(4,  "Analyze Heart Rate")
+        _item(5,  "Analyze Weight")
+        _item(6,  "Analyze Sleep")
+        _item(7,  "Analyze Workouts")
+        _item(8,  "Convert XML → CSV  (Full Dump)")
+        _item(9,  "Convert XML → JSON (Full Dump)")
 
-        print("\nCloud AI")
-        print("10. AI: Analyze All Data (OpenAI)")
-        print("11. AI: Analyze with Claude (Anthropic)")
-        print("12. AI: Analyze with Gemini (Google)")
-        print("13. AI: Analyze with Grok (xAI)")
-        print("14. AI: Analyze with OpenRouter")
+        _section("Cloud AI")
+        _item(10, "Analyze All Data   (OpenAI)")
+        _item(11, "Analyze with Claude  (Anthropic)")
+        _item(12, "Analyze with Gemini  (Google)")
+        _item(13, "Analyze with Grok    (xAI)")
+        _item(14, "Analyze with OpenRouter")
 
-        print("\nLocal AI")
-        print("20. AI: Analyze with Ollama (Local)")
-        print("21. AI: Analyze with Ollama (Remote)")
-        print("22. AI: Analyze with LM Studio")
-        print("23. AI: Analyze with Jan")
-        print("24. AI: Analyze with LocalAI")
-        print("25. AI: Analyze with Msty")
-        print("26. AI: Analyze with LiteLLM (Universal)")
+        _section("Local AI")
+        _item(20, "Analyze with Ollama  (Local)")
+        _item(21, "Analyze with Ollama  (Remote)")
+        _item(22, "Analyze with LM Studio")
+        _item(23, "Analyze with Jan")
+        _item(24, "Analyze with LocalAI")
+        _item(25, "Analyze with Msty")
+        _item(26, "Analyze with LiteLLM (Universal)")
 
-        print("\nSettings & Help")
-        print("30. AI Settings")
-        print("31. Reset Preferences")
-        print("32. View Change Log")
-        print("33. OpenClaw Setup Guide")
-        print("34. Exit")
+        _section("Settings & Help")
+        _item(30, "AI Settings")
+        _item(31, "Reset Preferences")
+        _item(32, "View Change Log")
+        _item(33, "OpenClaw Setup Guide")
+        _item(34, "Exit")
 
         choice = input("Enter your choice: ").strip()
         
