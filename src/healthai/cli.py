@@ -3552,35 +3552,32 @@ def _print_help(provider_label: str) -> None:
 
 
 def _handle_ai_settings() -> None:
-    from healthai.setup_wizard import PROVIDERS
+    from healthai.models import pick_model
+    from healthai.chat import get_configured_model, get_model_label
     prefs = _load_ai_prefs()
-    provider_id = prefs.get("default_provider", "not set")
+    current = get_configured_model()
     print(f"\n  {_W}Current Settings:{_X}")
-    print(f"  {_D}Provider:{_X}    {provider_id}")
-    print(f"  {_D}Output dir:{_X}  {prefs.get('output_dir', 'not set')}")
-    print(f"  {_D}Export XML:{_X}  {prefs.get('export_xml_path', 'not set')}")
+    print(f"  {_D}Model:{_X}      {get_model_label(current)}  {_D}({current}){_X}")
+    print(f"  {_D}Output dir:{_X} {prefs.get('output_dir', 'not set')}")
+    print(f"  {_D}Export XML:{_X} {prefs.get('export_xml_path', 'not set')}")
+    print()
 
-    print(f"\n  {_W}Change provider?{_X}")
-    for i, p in enumerate(PROVIDERS, 1):
-        marker = f"  {_G}←{_X}" if p["id"] == provider_id else ""
-        print(f"    {_D}{i}.{_X}  {p['label']}{marker}")
-    print(f"    {_D}0.{_X}  Keep current")
-
-    try:
-        raw = input(f"\n  {_C}›{_X} Enter number (0 to cancel): ").strip()
-    except (KeyboardInterrupt, EOFError):
-        print()
+    model_str, key_env = pick_model(current_model=current)
+    if not model_str or model_str == current:
         return
 
-    if raw == "0" or not raw:
-        return
-    if raw.isdigit() and 1 <= int(raw) <= len(PROVIDERS):
-        chosen = PROVIDERS[int(raw) - 1]
-        prefs["default_provider"] = chosen["id"]
-        _save_ai_prefs(prefs)
-        print(f"\n  {_G}✓{_X} Provider updated to: {chosen['label']}")
-    else:
-        print(f"  {_Y}Invalid selection — settings unchanged{_X}")
+    prefs["default_model"] = model_str
+    if key_env:
+        existing = os.environ.get(key_env, "") or prefs.get(key_env, "")
+        if not existing:
+            try:
+                key = input(f"  {_C}›{_X} Paste API key for {key_env}: ").strip()
+            except (KeyboardInterrupt, EOFError):
+                key = ""
+            if key:
+                prefs[key_env] = key
+    _save_ai_prefs(prefs)
+    print(f"\n  {_G}✓{_X} Model updated to: {model_str}")
 
 
 def main():
@@ -3616,20 +3613,20 @@ def main():
 
     _print_banner()
 
-    from healthai.chat import get_configured_provider, get_provider_label, chat
+    from healthai.chat import get_configured_model, get_model_label, chat
 
-    provider_id = get_configured_provider()
-    provider_label = get_provider_label(provider_id)
+    model_str = get_configured_model()
+    model_label = get_model_label(model_str)
     out_dir = get_output_dir()
     _box([
         f"🫀 healthai  v{__version__}",
-        f"  AI      → {provider_label}",
+        f"  AI      → {model_label}",
         f"  Outputs → {out_dir}",
         f"  Tip: drag-and-drop export.xml when prompted",
     ])
     print(f"\n  {_D}Tired of the CLI? 🫀  {_C}https://applehealthdata.com{_X}")
 
-    _print_help(provider_label)
+    _print_help(model_label)
 
     while True:
         try:
@@ -3648,7 +3645,7 @@ def main():
                 print(f"\n  {_D}Goodbye 🫀{_X}")
                 break
             elif cmd == "/help":
-                _print_help(provider_label)
+                _print_help(model_label)
             elif cmd == "/diagnose":
                 export_path = resolve_export_xml()
                 generate_debug_reports(export_path)
@@ -3670,6 +3667,8 @@ def main():
                 convert_xml_to_json()
             elif cmd == "/settings":
                 _handle_ai_settings()
+                model_str = get_configured_model()
+                model_label = get_model_label(model_str)
             elif cmd == "/reset":
                 confirm = input(f"  {_D}This will delete saved preferences. Proceed? (y/n):{_X} ").strip().lower()
                 if confirm == "y":
@@ -3680,8 +3679,8 @@ def main():
                 show_openclaw_guide()
             elif cmd == "/setup":
                 run_setup()
-                provider_id = get_configured_provider()
-                provider_label = get_provider_label(provider_id)
+                model_str = get_configured_model()
+                model_label = get_model_label(model_str)
             else:
                 print(f"  {_D}Unknown command. Type /help to see available commands.{_X}")
         else:
