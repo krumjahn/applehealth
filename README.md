@@ -46,15 +46,47 @@ This is an open-source technical toolkit for solopreneurs, researchers, and bioh
 It transforms the complex Apple Health `export.xml` into clean **CSV/JSON** datasets and provides a direct bridge to **AI reasoning engines**. Whether you want to use ChatGPT or run **100% private local analysis with DeepSeek-R1**, this tool handles the heavy lifting of data parsing and visualization.
 
 ## ✨ Key Features
+- 💬 **Chat Interface**: Ask questions about your health data in plain English — no commands to memorize.
 - 💍 **Smart Ring Integration**: Unified analysis for **Oura**, **Whoop**, and **Samsung Ring** via Apple Health sync.
 - 🧠 **DeepSeek-R1 & Local AI**: Run 100% private health audits using Ollama (no data leaves your machine).
 - 📊 **Automated Visualizations**: Instantly generate charts for heart rate cycles, sleep patterns, and workout intensity.
 - 📤 **High-Fidelity Export**: XML → CSV/JSON conversion that preserves all metadata (Record, Workout, ActivitySummary).
 - 🔄 **WHOOP Integration**: Specialized support for augmenting Apple Health data with WHOOP metrics.
-- 🧪 **Multi-Model Support**: Native support for ChatGPT, Claude, Gemini, Grok, and LM Studio.
+- 🧪 **Multi-Model Support**: Native support for ChatGPT, Claude, Gemini, Grok, Ollama, LM Studio, and more.
+
+## 💬 Chat with Your Health Data
+
+After setup, `healthai` drops you into a chat interface. Just type naturally:
+
+```
+  🫀 healthai  v1.5.0
+  AI      → OpenAI (ChatGPT)
+  Outputs → ~/healthai_output
+
+  › What were my most active weeks last year?
+  › How does my sleep correlate with my workout intensity?
+  › Show me my heart rate trends over the past 3 months
+```
+
+Slash commands handle data operations:
+
+| Command | Description |
+|---|---|
+| `/diagnose` | Full health data report across all metrics |
+| `/steps` | Analyze step count trends |
+| `/heartrate` | Heart rate trends and anomalies |
+| `/sleep` | Sleep duration and quality patterns |
+| `/workouts` | Workout history and intensity |
+| `/weight` | Weight and BMI trends |
+| `/csv` | Export all metrics to CSV |
+| `/json` | Export all metrics to JSON |
+| `/settings` | View and change AI provider |
+| `/setup` | Re-run the setup wizard |
+| `/help` | Show all available commands |
+| `/exit` | Quit |
 
 ## 🛠️ "Steal My System": From 8 Years of Data to Actionable Training
-I used this exact tool to analyze 8 years of my own fitness history. Here’s the system:
+I used this exact tool to analyze 8 years of my own fitness history. Here's the system:
 1. **The Pattern**: I discovered that my most active days (40k+ steps) almost never coincided with gym sessions—they were work-related.
 2. **The Optimization**: I used the AI Analyzer to identify "Heart Rate Cycles" (3-4 week recovery dips) to automate my deload weeks.
 3. **The Result**: A training plan that finally matches my biology instead of a generic app's schedule.
@@ -170,10 +202,10 @@ python skills/apple-health-export-analyzer/scripts/daily_brief.py --repo /path/t
 ```
 
 ## 📋 Requirements & Tech Stack
-- **Language**: Python 3.6+
+- **Language**: Python 3.9+
 - **Data**: Pandas, XML.ElementTree
 - **Viz**: Matplotlib
-- **AI**: OpenAI, Anthropic, Google, and Ollama APIs
+- **AI**: OpenAI, Anthropic, Google, Ollama, LiteLLM, and more
 
 ## 🐳 Docker (The "No-Setup" Way)
 If you have Docker installed, you can run the analyzer without installing Python or dependencies locally:

@@ -3552,13 +3552,35 @@ def _print_help(provider_label: str) -> None:
 
 
 def _handle_ai_settings() -> None:
+    from healthai.setup_wizard import PROVIDERS
     prefs = _load_ai_prefs()
-    print(f"\n  {_W}Current Settings:{_X}")
     provider_id = prefs.get("default_provider", "not set")
+    print(f"\n  {_W}Current Settings:{_X}")
     print(f"  {_D}Provider:{_X}    {provider_id}")
     print(f"  {_D}Output dir:{_X}  {prefs.get('output_dir', 'not set')}")
     print(f"  {_D}Export XML:{_X}  {prefs.get('export_xml_path', 'not set')}")
-    input(f"\n  Press Enter to continue...")
+
+    print(f"\n  {_W}Change provider?{_X}")
+    for i, p in enumerate(PROVIDERS, 1):
+        marker = f"  {_G}←{_X}" if p["id"] == provider_id else ""
+        print(f"    {_D}{i}.{_X}  {p['label']}{marker}")
+    print(f"    {_D}0.{_X}  Keep current")
+
+    try:
+        raw = input(f"\n  {_C}›{_X} Enter number (0 to cancel): ").strip()
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return
+
+    if raw == "0" or not raw:
+        return
+    if raw.isdigit() and 1 <= int(raw) <= len(PROVIDERS):
+        chosen = PROVIDERS[int(raw) - 1]
+        prefs["default_provider"] = chosen["id"]
+        _save_ai_prefs(prefs)
+        print(f"\n  {_G}✓{_X} Provider updated to: {chosen['label']}")
+    else:
+        print(f"  {_Y}Invalid selection — settings unchanged{_X}")
 
 
 def main():
@@ -3593,18 +3615,19 @@ def main():
             return
 
     _print_banner()
-    out_dir = get_output_dir()
-    _box([
-        f"🫀 healthai  v{__version__}",
-        f"  Outputs → {out_dir}",
-        f"  Tip: drag-and-drop export.xml when prompted",
-    ])
-    print(f"\n  {_D}Tired of the CLI? 🫀  {_C}https://applehealthdata.com{_X}")
 
     from healthai.chat import get_configured_provider, get_provider_label, chat
 
     provider_id = get_configured_provider()
     provider_label = get_provider_label(provider_id)
+    out_dir = get_output_dir()
+    _box([
+        f"🫀 healthai  v{__version__}",
+        f"  AI      → {provider_label}",
+        f"  Outputs → {out_dir}",
+        f"  Tip: drag-and-drop export.xml when prompted",
+    ])
+    print(f"\n  {_D}Tired of the CLI? 🫀  {_C}https://applehealthdata.com{_X}")
 
     _print_help(provider_label)
 
