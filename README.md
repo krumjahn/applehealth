@@ -1,8 +1,8 @@
-# healthai — Apple Health AI Analyzer
+# 🫀 healthai — Apple Health AI Analyzer
 <img width="1983" height="793" alt="ChatGPT Image Apr 26, 2026, 05_23_30 PM" src="https://github.com/user-attachments/assets/97700198-724b-4c98-a54c-4f5a7097733f" />
 
 
-**Privacy-First Health Intelligence: Turn your Apple Health exports into actionable insights with DeepSeek-R1, ChatGPT, and local LLMs.**
+**🫀 Privacy-First Health Intelligence: Turn your Apple Health exports into actionable insights with DeepSeek-R1, ChatGPT, and local LLMs.**
 
 [![GitHub stars](https://img.shields.io/github/stars/krumjahn/applehealth.svg?style=social)](https://github.com/krumjahn/applehealth/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)

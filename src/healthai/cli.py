@@ -3533,7 +3533,7 @@ def _print_banner():
     print()
     for color, line in zip(_BANNER_COLORS, _BANNER_LINES):
         print(f"  {color}{line}{_X}")
-    tagline = "Privacy-First Health Intelligence  ·  AI-Powered  ·  Runs Locally"
+    tagline = "🫀 Privacy-First Health Intelligence  ·  AI-Powered  ·  Runs Locally"
     print(f"  {_D}{tagline}{_X}")
     print()
 
@@ -3590,11 +3590,11 @@ def main():
     _print_banner()
     out_dir = get_output_dir()
     _box([
-        f"* Apple Health Data Analyzer  v{__version__}",
+        f"🫀 healthai  v{__version__}",
         f"  Outputs → {out_dir}",
         f"  Tip: drag-and-drop export.xml when prompted",
     ])
-    print(f"\n  {_D}Tired of the CLI?  {_C}https://applehealthdata.com{_X}")
+    print(f"\n  {_D}Tired of the CLI? 🫀  {_C}https://applehealthdata.com{_X}")
 
     while True:
         _section("Data & Export")

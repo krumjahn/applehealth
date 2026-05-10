@@ -59,7 +59,7 @@ def _divider():
 
 def run_setup() -> dict:
     """Interactive first-run setup. Returns completed prefs dict."""
-    print(f"\n  {_W}Welcome to healthai setup!{_X}")
+    print(f"\n  🫀 {_W}Welcome to healthai setup!{_X}")
     print(f"  {_D}This only runs once. You can re-run it with: healthai --setup{_X}\n")
 
     prefs = _load_prefs()
@@ -151,7 +151,7 @@ def run_setup() -> dict:
     _divider()
     prefs["setup_complete"] = True
     _save_prefs(prefs)
-    print(f"  {_G}✓ Setup complete!{_X} Config saved to ~/.applehealth/ai_prefs.json")
+    print(f"  🫀 {_G}Setup complete!{_X} Config saved to ~/.applehealth/ai_prefs.json")
     print(f"\n  {_D}To re-run setup: {_C}healthai --setup{_X}\n")
 
     return prefs
