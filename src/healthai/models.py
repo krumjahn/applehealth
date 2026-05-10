@@ -62,7 +62,7 @@ def pick_model(current_model: str = "") -> tuple[str, str | None]:
     print(f"\n  {_W}Choose your AI model{_X}  {_D}(type a number or press Enter to keep current){_X}\n")
 
     num = 1
-    index_map: dict[int, tuple] = {}
+    index_map: dict[int, tuple[str, str, str, bool, str | None]] = {}
     current_num: int | None = None
 
     for group in GROUPS:
@@ -91,7 +91,10 @@ def pick_model(current_model: str = "") -> tuple[str, str | None]:
         return (current_model, None)
 
     if not raw.isdigit() or int(raw) not in index_map:
-        print(f"  {_Y}Invalid — keeping current model{_X}")
+        if current_model:
+            print(f"  {_Y}Invalid — keeping current model{_X}")
+        else:
+            print(f"  {_Y}Invalid selection{_X}")
         return (current_model, None)
 
     chosen = index_map[int(raw)]
