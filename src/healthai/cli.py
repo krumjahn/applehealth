@@ -48,6 +48,7 @@ from urllib.parse import unquote as _url_unquote
 from typing import Optional, List, Dict, Any, Tuple
 import re
 from healthai import __version__
+from healthai.setup_wizard import is_setup_complete, run_setup
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -3581,7 +3582,6 @@ def main():
         except Exception:
             pass
 
-    from healthai.setup_wizard import is_setup_complete, run_setup
     if getattr(args, 'setup', False) or not is_setup_complete():
         run_setup()
         if getattr(args, 'setup', False):
