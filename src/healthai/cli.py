@@ -47,6 +47,7 @@ import json
 from urllib.parse import unquote as _url_unquote
 from typing import Optional, List, Dict, Any, Tuple
 import re
+from healthai import __version__
 try:
     import anthropic  # Claude SDK
 except Exception:
@@ -63,7 +64,6 @@ except Exception:
 # Optional user-provided path to export.xml (from CLI or prompt)
 _export_xml_path = None
 _output_dir = os.environ.get('OUTPUT_DIR')
-from healthai import __version__
 
 def get_output_dir():
     """Return the absolute output directory, creating it if needed.
