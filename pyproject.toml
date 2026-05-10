@@ -4,27 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthai"
-dynamic = ["version"]
+version = "1.4.2"
 description = "Privacy-first Apple Health data analyzer powered by AI"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
+authors = [{ name = "Keith Rumjahn", email = "keith@olivex.ai" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
 dependencies = [
     "pandas>=2.0.0",
     "matplotlib>=3.7.0",
     "python-dotenv>=1.0.0",
     "openai>=1.0.0",
-    "ollama>=0.1.0",
+    "ollama>=0.4.0",
     "anthropic>=0.36.0",
     "google-generativeai>=0.7.2",
-    "litellm!=1.82.7,!=1.82.8",
+    "litellm>=1.80.0,!=1.82.7,!=1.82.8",
 ]
+
+[project.urls]
+Homepage = "https://github.com/krumjahn/applehealth"
+"Bug Tracker" = "https://github.com/krumjahn/applehealth/issues"
 
 [project.scripts]
 healthai = "healthai.cli:main"
-
-[tool.setuptools.dynamic]
-version = { attr = "healthai.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
