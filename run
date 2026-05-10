@@ -40,5 +40,5 @@ echo "[setup] Installing dependencies from requirements.txt" >&2
 "$PIP" install -r requirements.txt
 
 echo "[run] Launching app" >&2
-exec "$PY" src/applehealth.py "$@"
+exec "$PY" -m healthai "$@"
 
