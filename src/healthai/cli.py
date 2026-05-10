@@ -3540,9 +3540,9 @@ SLASH_COMMANDS = [
 ]
 
 
-def _print_help(provider_label: str) -> None:
+def _print_help(model_label: str) -> None:
     print(f"\n  {_D}─── Chat {'─' * 43}{_X}")
-    print(f"  Type anything to analyze your health data with {_W}{provider_label}{_X}.")
+    print(f"  Type anything to analyze your health data with {_W}{model_label}{_X}.")
     print(f"  {_D}Example: \"What does my sleep pattern look like?\"{_X}")
     print(f"\n  {_D}─── Commands {'─' * 39}{_X}")
     cmd_width = max(len(c) for c, _ in SLASH_COMMANDS)
@@ -3585,6 +3585,12 @@ def main():
     Main function providing an interactive menu to choose which health metric to analyze.
     """
     global _export_xml_path, _output_dir
+    try:
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.completion import Completer, Completion
+        _pt_available = True
+    except ImportError:
+        _pt_available = False
     parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
     parser.add_argument("--version", action="version", version=f"healthai {__version__}")
     parser.add_argument("-e", "--export", help="Path to export.xml or a directory containing it")
@@ -3628,9 +3634,35 @@ def main():
 
     _print_help(model_label)
 
+    if _pt_available:
+        class _SlashCompleter(Completer):
+            def get_completions(self, document, complete_event):
+                text = document.text_before_cursor
+                if not text.startswith("/"):
+                    return
+                for cmd, desc in SLASH_COMMANDS:
+                    if cmd.startswith(text):
+                        yield Completion(
+                            cmd[len(text):],
+                            start_position=0,
+                            display=cmd,
+                            display_meta=desc,
+                        )
+
+        from prompt_toolkit.styles import Style as _PTStyle
+        _pt_style = _PTStyle.from_dict({"prompt": "ansibrightcyan"})
+        _session = PromptSession(
+            completer=_SlashCompleter(),
+            complete_while_typing=True,
+            style=_pt_style,
+        )
+
     while True:
         try:
-            raw = input(f"  {_C}›{_X} ").strip()
+            if _pt_available:
+                raw = _session.prompt("  › ").strip()
+            else:
+                raw = input(f"  {_C}›{_X} ").strip()
         except (KeyboardInterrupt, EOFError):
             print(f"\n  {_D}Goodbye 🫀{_X}")
             break
