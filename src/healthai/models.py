@@ -102,7 +102,7 @@ def pick_model(current_model: str = "") -> tuple[str, str | None]:
             custom = input(f"  {_C}›{_X} Enter litellm model string (e.g. groq/llama3): ").strip()
         except (KeyboardInterrupt, EOFError):
             print()
-            return (current_model, None)
+            return ("", None)
         if not custom:
             return (current_model, None)
         return (custom, None)
