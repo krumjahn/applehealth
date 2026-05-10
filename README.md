@@ -1,4 +1,4 @@
-# Apple Health A.I. Data Analyzer 🍎🤖
+# healthai — Apple Health AI Analyzer
 <img width="1983" height="793" alt="ChatGPT Image Apr 26, 2026, 05_23_30 PM" src="https://github.com/user-attachments/assets/97700198-724b-4c98-a54c-4f5a7097733f" />
 
 
@@ -6,7 +6,8 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/krumjahn/applehealth.svg?style=social)](https://github.com/krumjahn/applehealth/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/badge/pip-healthai-orange.svg)](https://pypi.org/project/healthai/)
 [![DeepSeek-R1 Supported](https://img.shields.io/badge/DeepSeek--R1-Local%20AI-blueviolet)](https://ollama.com/library/deepseek-r1)
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-ff6b35.svg)](https://clawhub.ai/krumjahn/apple-health-export-analyzer)
 
@@ -31,6 +32,8 @@ Then run:
 ```bash
 healthai
 ```
+
+On first launch, a setup wizard walks you through choosing your AI provider (OpenAI, Claude, Gemini, Grok, Ollama, and more), setting your API key, and pointing to your `export.xml`. Re-run it any time with `healthai --setup`.
 
 ### 🚀 **Tired of the CLI?**
 **Get the Pro Version:** For instant, interactive analysis and one-click exports without touching a terminal, visit **[applehealthdata.com](https://applehealthdata.com)**.
@@ -57,20 +60,23 @@ I used this exact tool to analyze 8 years of my own fitness history. Here’s th
 3. **The Result**: A training plan that finally matches my biology instead of a generic app's schedule.
 [Read the full case study here](https://rumjahn.com/how-i-used-a-i-to-analyze-8-years-of-apple-health-fitness-data-to-uncover-actionable-insights/).
 
-## ⚡ Quick Start (The "Builder" Way)
+## ⚡ Quick Start
 
+**Recommended (install once, run anywhere):**
 ```bash
-# 1) Clone the repo
-git clone https://github.com/krumjahn/applehealth.git && cd applehealth
+curl -fsSL https://raw.githubusercontent.com/krumjahn/applehealth/main/install.sh | bash
+healthai
+```
 
-# 2) Run the auto-bootstrapper (it handles venv and dependencies)
+**Or clone and run directly:**
+```bash
+git clone https://github.com/krumjahn/applehealth.git && cd applehealth
 ./run
 ```
 
-**For Private AI Analysis (DeepSeek-R1):**
-1. Install [Ollama](https://ollama.ai).
-2. Run `ollama pull deepseek-r1`.
-3. Launch this tool and select **Option 8 (Local LLM)**.
+**For private local AI (DeepSeek-R1, free, no API key):**
+1. Install [Ollama](https://ollama.ai) and run `ollama pull deepseek-r1`.
+2. Launch `healthai`, choose **Ollama** in the setup wizard.
 
 ## 🦞 OpenClaw Support
 
