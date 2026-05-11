@@ -3634,6 +3634,9 @@ def main():
 
     _print_help(model_label)
 
+    # Stats shared between toolbar and chat call
+    _stats: dict = {"elapsed": 0.0, "tokens_in": 0, "tokens_out": 0}
+
     if _pt_available:
         class _SlashCompleter(Completer):
             def get_completions(self, document, complete_event):
@@ -3650,11 +3653,27 @@ def main():
                         )
 
         from prompt_toolkit.styles import Style as _PTStyle
-        _pt_style = _PTStyle.from_dict({"prompt": "ansibrightcyan"})
+        from prompt_toolkit.formatted_text import HTML as _HTML
+
+        def _toolbar():
+            s = _stats
+            parts = [f"<b>{model_label}</b>"]
+            if s["elapsed"] > 0:
+                parts.append(f"{s['elapsed']:.1f}s")
+            if s["tokens_in"] or s["tokens_out"]:
+                parts.append(f"↑{s['tokens_in']} ↓{s['tokens_out']} tok")
+            return _HTML("  " + "  ·  ".join(parts) + "  ")
+
+        _pt_style = _PTStyle.from_dict({
+            "prompt":          "ansibrightcyan",
+            "bottom-toolbar":  "bg:#1a1a1a #666666",
+            "bottom-toolbar b": "bg:#1a1a1a #aaaaaa bold",
+        })
         _session = PromptSession(
             completer=_SlashCompleter(),
             complete_while_typing=True,
             style=_pt_style,
+            bottom_toolbar=_toolbar,
         )
 
     while True:
@@ -3716,7 +3735,8 @@ def main():
             else:
                 print(f"  {_D}Unknown command. Type /help to see available commands.{_X}")
         else:
-            chat(raw)
+            result = chat(raw)
+            _stats.update(result)
 
 def check_requirements():
     """Check if all required packages are installed"""

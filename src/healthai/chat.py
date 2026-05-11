@@ -2,6 +2,9 @@
 from __future__ import annotations
 import os
 import json
+import sys
+import time
+import threading
 
 from healthai.models import MODELS
 
@@ -74,13 +77,53 @@ def _build_context(output_dir: str) -> str:
     return "\n\n".join(parts) if parts else ""
 
 
-def chat(user_message: str) -> None:
-    """Send user_message to the configured litellm model with health CSV context."""
+_THINKING_PHRASES = [
+    "Thinking…",
+    "Analyzing your data…",
+    "Crunching the numbers…",
+    "Reading your health records…",
+    "Almost there…",
+    "Connecting the dots…",
+]
+_SPINNER_FRAMES = ["⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓"]
+
+
+def _thinking_spinner(stop_event: threading.Event) -> None:
+    """Animated thinking indicator — runs in a background thread."""
+    from healthai.ui import _D, _X
+    start = time.time()
+    i = 0
+    phrase_idx = 0
+    phrase_change = 3.0  # seconds between phrase rotations
+    try:
+        while not stop_event.is_set():
+            elapsed = time.time() - start
+            frame = _SPINNER_FRAMES[i % len(_SPINNER_FRAMES)]
+            phrase = _THINKING_PHRASES[phrase_idx % len(_THINKING_PHRASES)]
+            line = f"\r  {_D}{frame}  {phrase}  {elapsed:.1f}s{_X}   "
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            if elapsed >= phrase_change * (phrase_idx + 1):
+                phrase_idx += 1
+            i += 1
+            time.sleep(0.08)
+    except Exception:
+        pass
+    # clear the line
+    sys.stdout.write("\r" + " " * 72 + "\r")
+    sys.stdout.flush()
+
+
+def chat(user_message: str) -> dict:
+    """Send user_message to the configured litellm model with health CSV context.
+
+    Returns a stats dict: {"elapsed": float, "tokens_in": int, "tokens_out": int}.
+    """
     try:
         import litellm
     except ImportError:
         print("  litellm not installed. Run: pip install litellm")
-        return
+        return {"elapsed": 0.0, "tokens_in": 0, "tokens_out": 0}
 
     from healthai.ui import _C, _D, _G, _X, _Y
 
@@ -104,11 +147,18 @@ def chat(user_message: str) -> None:
         + (f"Health data:\n{context}" if context else "No health data found. Ask the user to run /csv first.")
     )
 
-    print(f"\n  {_D}Thinking…{_X}")
+    print()
+    stop = threading.Event()
+    spinner_thread = threading.Thread(target=_thinking_spinner, args=(stop,), daemon=True)
+    spinner_thread.start()
+
+    t0 = time.time()
     try:
         extra: dict = {}
         if model.startswith("ollama"):
             extra["api_base"] = prefs.get("ollama_host", "http://localhost:11434")
+        if prefs.get("openai_compat_base") and model.startswith("openai/"):
+            extra["api_base"] = prefs["openai_compat_base"]
 
         response = litellm.completion(
             model=model,
@@ -118,7 +168,21 @@ def chat(user_message: str) -> None:
             ],
             **extra,
         )
+        elapsed = time.time() - t0
+        stop.set()
+        spinner_thread.join()
+
         answer = response.choices[0].message.content or ""
-        print(f"\n  {_G}●{_X} {answer.strip()}\n")
+        usage = getattr(response, "usage", None)
+        tokens_in  = getattr(usage, "prompt_tokens",     0) if usage else 0
+        tokens_out = getattr(usage, "completion_tokens", 0) if usage else 0
+
+        print(f"  {_G}●{_X} {answer.strip()}\n")
+        return {"elapsed": elapsed, "tokens_in": tokens_in, "tokens_out": tokens_out}
+
     except Exception as e:
-        print(f"\n  {_Y}Error:{_X} {e}\n  Run /settings to check your model and API key.\n")
+        elapsed = time.time() - t0
+        stop.set()
+        spinner_thread.join()
+        print(f"  {_Y}Error:{_X} {e}\n  Run /settings to check your model and API key.\n")
+        return {"elapsed": elapsed, "tokens_in": 0, "tokens_out": 0}
