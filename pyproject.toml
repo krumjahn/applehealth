@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthai"
-version = "1.7.0"
+version = "1.8.0"
 description = "Privacy-first Apple Health data analyzer powered by AI"
 readme = "README.md"
 license = { text = "MIT" }
