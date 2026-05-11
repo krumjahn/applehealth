@@ -109,6 +109,80 @@ git clone https://github.com/krumjahn/applehealth.git && cd applehealth
 1. Install [Ollama](https://ollama.ai) and run `ollama pull deepseek-r1`.
 2. Launch `healthai`, choose **Ollama** in the setup wizard.
 
+---
+
+## 🖥️ Local LLM Setup
+
+Run any model 100% on your own machine — no API key, no data leaving your device.
+
+### Ollama (easiest)
+
+```bash
+# 1. Install Ollama: https://ollama.ai
+# 2. Pull a model
+ollama pull llama3.1          # Meta Llama 3.1 8B
+ollama pull deepseek-r1       # DeepSeek R1 reasoning
+ollama pull mistral           # Mistral 7B
+ollama pull qwen3             # Qwen3
+
+# 3. Run healthai and pick Ollama from the Featured section
+healthai --setup
+```
+
+Ollama runs on `localhost:11434` automatically. No configuration needed.
+
+### Jan
+
+[Jan](https://jan.ai) is a desktop app with a built-in model library and local API server.
+
+```
+1. Download Jan from https://jan.ai
+2. Install a model inside the Jan app (e.g. Llama 3.1 8B)
+3. Enable the API server: Settings → Local API Server → Start
+4. Run: healthai --setup
+5. Choose "Jan — local server (localhost:1337)"
+6. Enter the model name shown in Jan (e.g. llama3.1-8b-instruct)
+```
+
+### LM Studio
+
+[LM Studio](https://lmstudio.ai) lets you download and run GGUF models with a GUI.
+
+```
+1. Download LM Studio from https://lmstudio.ai
+2. Download a model from the Discover tab
+3. Go to Local Server tab → Start Server
+4. Run: healthai --setup
+5. Choose "LM Studio (localhost:1234)"
+6. Enter the model name shown in LM Studio's server tab
+```
+
+### llama.cpp
+
+For advanced users running [llama.cpp](https://github.com/ggerganov/llama.cpp) server mode:
+
+```bash
+# Start llama.cpp in server mode
+./llama-server -m your-model.gguf --port 8080
+
+# Then in healthai --setup, choose "llama.cpp server (localhost:8080)"
+# Enter the model name (usually the filename without .gguf)
+```
+
+### GPT4All
+
+[GPT4All](https://gpt4all.io) has an optional local API server:
+
+```
+1. Open GPT4All → Settings → Application → Advanced
+2. Enable "Local API Server" on port 4891
+3. Run: healthai --setup → choose "GPT4All (localhost:4891)"
+```
+
+### Any OpenAI-compatible server
+
+vLLM, LocalAI, Llamafile, and any other server that exposes an OpenAI-compatible `/v1/chat/completions` endpoint works via **"Custom OpenAI-compatible endpoint"** in the setup wizard.
+
 ## 🦞 OpenClaw Support
 
 This repo now has a published OpenClaw skill:
