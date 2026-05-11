@@ -142,11 +142,10 @@ def pick_model(current_model: str = "") -> tuple[str, str | None]:
 def _pick_model_pt(current_model: str) -> tuple[str, str | None]:
     """prompt_toolkit-powered fuzzy picker."""
     from prompt_toolkit import Application
-    from prompt_toolkit.buffer import Buffer
     from prompt_toolkit.key_binding import KeyBindings
     from prompt_toolkit.layout import Layout
     from prompt_toolkit.layout.containers import HSplit, Window
-    from prompt_toolkit.layout.controls import BufferControl, FormattedTextControl
+    from prompt_toolkit.layout.controls import FormattedTextControl
     from prompt_toolkit.styles import Style
 
     style = Style.from_dict({
@@ -316,7 +315,11 @@ def _pick_model_pt(current_model: str) -> tuple[str, str | None]:
             import json, os
             p = os.path.join(os.path.expanduser("~"), ".applehealth", "ai_prefs.json")
             try:
-                prefs = json.load(open(p)) if os.path.exists(p) else {}
+                if os.path.exists(p):
+                    with open(p, encoding="utf-8") as _fh:
+                        prefs = json.load(_fh)
+                else:
+                    prefs = {}
             except Exception:
                 prefs = {}
             prefs["openai_compat_base"] = base
