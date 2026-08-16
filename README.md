@@ -319,4 +319,4 @@ Join our community of builders! If you improve the parser or add a new visualiza
 ---
 If you find this tool useful, **please give it a star ⭐️** to help others find it!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=krumjahn/applehealth&type=Date)](https://star-history.com/#krumjahn/applehealth&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=krumjahn/applehealth&type=Date)](https://star-history.dera.page/#krumjahn/applehealth&Date)
