@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthai"
-version = "1.10.0"
-description = "Privacy-first Apple Health data analyzer powered by AI"
+version = "1.11.0"
+description = "Private Apple Health XML/ZIP export and optional AI analysis"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
@@ -32,7 +32,11 @@ Homepage = "https://github.com/krumjahn/applehealth"
 "Bug Tracker" = "https://github.com/krumjahn/applehealth/issues"
 
 [project.scripts]
-healthai = "healthai.cli:main"
+healthai = "healthai.entrypoint:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["applehealth"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

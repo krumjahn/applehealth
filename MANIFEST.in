@@ -1,0 +1,3 @@
+include CHANGELOG.md
+include run
+recursive-include benchmarks *.py *.json

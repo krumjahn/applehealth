@@ -1,6 +1,6 @@
-# 🫀 healthai — Apple Health AI Analyzer
+# 🫀 healthai — Private Apple Health Export & Analysis
 
-**A terminal AI assistant for your Apple Health data. Chat with 8 years of personal health metrics using any LLM — local or cloud.**
+**Turn years of Apple Health data into usable CSV and JSON on your own computer. Keep raw values intact, handle large exports, and optionally chat with your data using local or cloud AI.**
 
 [![GitHub stars](https://img.shields.io/github/stars/krumjahn/applehealth.svg?style=social)](https://github.com/krumjahn/applehealth/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -9,11 +9,76 @@
 [![DeepSeek-R1 Supported](https://img.shields.io/badge/DeepSeek--R1-Local%20AI-blueviolet)](https://ollama.com/library/deepseek-r1)
 [![OpenClaw Skill](https://img.shields.io/badge/OpenClaw-Skill-ff6b35.svg)](https://clawhub.ai/krumjahn/apple-health-export-analyzer)
 
+## Export your data locally
+
+The new `convert` command runs without AI setup, API keys, uploads, telemetry, or third-party Python packages. From this source checkout:
+
+```bash
+./run convert ~/Downloads/export.zip --format both --out ./my-health-export
+```
+
+It also accepts `export.xml` or a directory containing it. With this checkout installed, the equivalent is:
+
+```bash
+healthai convert ~/Downloads/export.zip --format both --out ./my-health-export
+```
+
+**New in v1.11.0.** Install the [v1.11.0 GitHub release](https://github.com/krumjahn/applehealth/releases/tag/v1.11.0) or use `./run convert` from source. PyPI installations may lag behind this release.
+
+Choose `--format csv` (the default), `json`, or `both`. Use a **new output directory** for each run. Progress is shown locally; `--quiet` hides progress while retaining the completion summary and warnings.
+
+| Output | Contents |
+|---|---|
+| `records.csv` / `records.json` | Raw measurements with original units, values, dates and sources |
+| `workouts.csv` / `workouts.json` | Workouts, nested statistics, events and route references |
+| `activity_summary.csv` / `activity_summary.json` | Activity summary attributes |
+| `export_report.json` | Local row counts, unsupported element counts, input XML checksum and conversion duration |
+
+CSV flattens metadata into `metadata:<key>` columns. Nested elements are preserved in a `children` column containing JSON, including repeated metadata entries. JSON keeps a convenient `metadata` object and structured `children`. Referenced GPX/ECG files inside ZIPs are **not extracted**. Top-level `Me` and `ExportDate` metadata are omitted and counted in the report; other unsupported top-level elements produce a warning and counts.
+
+Raw conversion does **not** change units, combine sources, deduplicate measurements, or calculate daily totals. For source-aware summaries and unit conversion, use the interactive analysis commands below. This keeps the original measurements available for your own processing.
+
+The converter streams records instead of retaining the whole XML tree. JSON takes one pass; CSV takes two so columns discovered near the end are included. Memory depends on the largest individual record and the number of distinct columns, rather than total record count. Outputs are staged locally and published together only after success; malformed XML, changed input between CSV passes, and write errors fail explicitly. Existing output directories are refused.
+
+**Privacy:** conversion makes no network requests and does not read or save AI preferences. The report stays in your output folder; nothing is sent to us. Downloading/installing software still requires network access. Optional cloud AI chat sends data to the provider you choose; local conversion never invokes it.
+
+### Measured large-file behavior
+
+Local synthetic CSV benchmark, November 2, 2026, on macOS arm64 / Python 3.14.6:
+
+| Input | Previous raw CSV algorithm | Streaming converter |
+|---|---|---|
+| 10,000 rows / 2.38 MB XML | 0.21 s / 85.5 MiB peak memory | 0.08 s / 26.6 MiB |
+| 100,000 rows / 23.8 MB XML | 0.64 s / 194.2 MiB | 0.68 s / 25.9 MiB |
+| 1,000,000 rows / 238 MB XML | 5.86 s / 1,289.1 MiB | 6.90 s / 25.9 MiB |
+| 10,000,000 rows / 2.38 GB XML | Not run | 68.11 s / 26.4 MiB |
+
+The measured benefit is predictable memory use: about 50× less peak memory at one million rows. Two-pass CSV was slightly slower at that size; this is not a universal speedup claim. Each measurement is one run in a fresh process with warm filesystem cache, including imports. The previous-algorithm baseline retains the XML tree, row dictionaries and a pandas DataFrame; it excludes AI startup and processed summaries. Fixtures contain flat synthetic step records, so ZIP decompression and nested metadata will have different costs. Output counts and raw values are checked independently after conversion. No personal health data or usage analytics were collected.
+
+Reproduce locally (the comparison requires pandas; the streaming-only run does not):
+
+```bash
+PYTHONPATH=src .venv/bin/python benchmarks/export_benchmark.py --records 10000 100000 1000000
+PYTHONPATH=src python3 benchmarks/export_benchmark.py --records 10000000 --streaming-only
+```
+
+The large run temporarily needs several GB of free disk space. Generated inputs and outputs are removed afterwards. Machine-readable results: [comparison](benchmarks/export-results.json) and [large export](benchmarks/export-large-results.json). These are local benchmark results, not live tracking.
+
+## Optional AI analysis
+
 ![healthai CLI preview](assets/cli-preview.png)
 
 ---
 
 ## Installation
+
+Install v1.11.0 directly from the GitHub release:
+
+```bash
+pipx install https://github.com/krumjahn/applehealth/releases/download/v1.11.0/healthai-1.11.0-py3-none-any.whl
+```
+
+The installer and PyPI commands below install the version currently available on PyPI, which may be older.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/krumjahn/applehealth/main/install.sh | bash
@@ -40,16 +105,16 @@ Visit **[applehealthdata.com](https://applehealthdata.com)** for instant, intera
 
 ## 🧐 What is this?
 
-A purpose-built CLI that turns your Apple Health `export.xml` into a conversational AI session. Think of it as having a personal health analyst in your terminal — one that knows your exact data and can answer questions, spot trends, and generate charts without sending anything to a third party unless you choose to.
+A local Apple Health data toolkit: convert an XML/ZIP export into usable files, then explore trends with charts or optional AI chat. Conversion works entirely offline. Choose a local model for private AI analysis or explicitly configure a cloud provider.
 
 It's built for developers, biohackers, and researchers who want **full control** over their health data pipeline.
 
 ## ✨ Key Features
+- 📤 **Streaming raw export**: XML/ZIP → CSV/JSON, progress, preserved nested workout details, and a local completeness report. No AI setup needed.
 - 💬 **Chat REPL**: Ask questions in plain English. `"What were my most active months last year?"` — chat builds query-aware local summaries and includes recent complete rows.
 - 🧠 **50+ AI Models**: GPT-4o, Claude, Gemini, DeepSeek-R1, Grok, Mistral, Llama, and any Ollama local model.
 - 🔒 **100% Private Mode**: Run DeepSeek-R1 or Llama 3 locally via Ollama — no data leaves your machine.
 - 📊 **Automated Charts**: Daily heart-rate means, source-reconciled sleep patterns, and workout heart-rate intensity.
-- 📤 **High-Fidelity Export**: XML → CSV/JSON preserving all metadata (Record, Workout, ActivitySummary).
 - 💍 **Smart Ring Integration**: Unified view of **Oura**, **Whoop**, and **Samsung Ring** data via Apple Health sync.
 - 🔄 **WHOOP Integration**: Specialized support for augmenting Apple Health data with WHOOP metrics.
 

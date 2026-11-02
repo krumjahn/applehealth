@@ -8,10 +8,10 @@ state such as ``applehealth._output_dir`` or ``applehealth._export_xml_path``.
 """
 import sys
 
-from healthai.cli import main  # noqa: F401  (explicit re-export for tooling)
-
 if __name__ == "__main__":
-    main()
+    from healthai.entrypoint import main
+
+    raise SystemExit(main())
 else:
     from healthai import cli as _cli
 

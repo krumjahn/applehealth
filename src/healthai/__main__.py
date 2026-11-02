@@ -1,4 +1,4 @@
-from healthai.cli import main
+from healthai.entrypoint import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

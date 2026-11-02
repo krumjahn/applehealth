@@ -3893,7 +3893,10 @@ def main():
         _pt_available = True
     except ImportError:
         _pt_available = False
-    parser = argparse.ArgumentParser(description="Apple Health Data Analyzer")
+    parser = argparse.ArgumentParser(
+        description="Apple Health Data Analyzer",
+        epilog="Offline raw export: healthai convert export.zip --format csv --out health_export",
+    )
     parser.add_argument("--version", action="version", version=f"healthai {__version__}")
     parser.add_argument("-e", "--export", help="Path to export.xml or a directory containing it")
     parser.add_argument("-o", "--out", help="Directory to write CSV/PNG/MD outputs")

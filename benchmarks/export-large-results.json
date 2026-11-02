@@ -1,0 +1,14 @@
+{
+  "python": "3.14.6",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "fixture": "Synthetic flat step records; raw CSV only; one run per size/mode; warm filesystem cache",
+  "measurements": [
+    {
+      "mode": "streaming",
+      "records": 10000000,
+      "seconds": 68.111,
+      "peak_rss_mib": 26.41,
+      "xml_bytes": 2380000027
+    }
+  ]
+}

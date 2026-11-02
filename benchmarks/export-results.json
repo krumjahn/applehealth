@@ -1,0 +1,49 @@
+{
+  "python": "3.14.6",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "fixture": "Synthetic flat step records; raw CSV only; one run per size/mode; warm filesystem cache",
+  "measurements": [
+    {
+      "mode": "legacy_raw",
+      "records": 10000,
+      "seconds": 0.212,
+      "peak_rss_mib": 85.5,
+      "xml_bytes": 2380027
+    },
+    {
+      "mode": "streaming",
+      "records": 10000,
+      "seconds": 0.078,
+      "peak_rss_mib": 26.58,
+      "xml_bytes": 2380027
+    },
+    {
+      "mode": "legacy_raw",
+      "records": 100000,
+      "seconds": 0.637,
+      "peak_rss_mib": 194.16,
+      "xml_bytes": 23800027
+    },
+    {
+      "mode": "streaming",
+      "records": 100000,
+      "seconds": 0.68,
+      "peak_rss_mib": 25.86,
+      "xml_bytes": 23800027
+    },
+    {
+      "mode": "legacy_raw",
+      "records": 1000000,
+      "seconds": 5.859,
+      "peak_rss_mib": 1289.14,
+      "xml_bytes": 238000027
+    },
+    {
+      "mode": "streaming",
+      "records": 1000000,
+      "seconds": 6.901,
+      "peak_rss_mib": 25.91,
+      "xml_bytes": 238000027
+    }
+  ]
+}

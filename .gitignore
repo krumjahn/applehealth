@@ -3,6 +3,7 @@
 *.env
 *.csv
 *.md
+!CHANGELOG.md
 *.DS_Store
 
 # Generated analysis artifacts

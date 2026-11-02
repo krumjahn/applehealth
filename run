@@ -10,6 +10,11 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd -P)"
 cd "$PROJECT_ROOT"
 
+# Raw conversion uses only Python's standard library and stays fully offline.
+if [[ "${1:-}" == "convert" ]]; then
+  exec env PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m healthai "$@"
+fi
+
 # Choose venv dir: prefer existing one; default to ./.venv
 DEFAULT_VENV=".venv"
 ALT_VENV="venv"
