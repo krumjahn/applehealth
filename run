@@ -45,5 +45,5 @@ echo "[setup] Installing dependencies from requirements.txt" >&2
 "$PIP" install -r requirements.txt
 
 echo "[run] Launching app" >&2
-exec "$PY" -m healthai "$@"
+exec env PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" "$PY" -m healthai "$@"
 
