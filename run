@@ -15,6 +15,19 @@ if [[ "${1:-}" == "convert" ]]; then
   exec env PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" python3 -m healthai "$@"
 fi
 
+# Dashboard help/demo use the standard library; real reports reuse installed
+# pandas. Never bootstrap AI packages or contact a package index on this path.
+if [[ "${1:-}" == "dashboard" ]]; then
+  DASHBOARD_PY="python3"
+  for candidate in "${VENV_DIR:-.venv}/bin/python" "venv/bin/python"; do
+    if [[ -x "$candidate" ]]; then
+      DASHBOARD_PY="$candidate"
+      break
+    fi
+  done
+  exec env PYTHONPATH="$PROJECT_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" "$DASHBOARD_PY" -m healthai "$@"
+fi
+
 # Choose venv dir: prefer existing one; default to ./.venv
 DEFAULT_VENV=".venv"
 ALT_VENV="venv"

@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="light dark">
+<title>Your month in health · healthai</title>
+<style>:root {
+  --paper: #f4f3ee;
+  --card: #fff;
+  --ink: #262921;
+  --muted: #7a7c71;
+  --line: #e3e3da;
+  --grid: #eeeee6;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+button, select { font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 8px 12px; cursor: pointer; }
+button:hover, select:hover { filter: brightness(.97); }
+button:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid #3d90d1; outline-offset: 4px; }
+main:focus { outline: none; }
+.toolbar { max-width: 1280px; margin: auto; display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; gap: 15px; }
+.brand { font-size: 20px; font-weight: 750; letter-spacing: -.7px; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.brand span { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: var(--ink); color: var(--paper); margin-right: 5px; }
+.tools { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.tools label { color: var(--muted); }
+main { max-width: 1040px; margin: 12px auto 0; padding: 38px; }
+.report-header { display: flex; justify-content: space-between; align-items: center; gap: 25px; margin-bottom: 20px; }
+.eyebrow { font-size: 9px; font-weight: 750; letter-spacing: 1.8px; }
+h1 { font-size: 38px; font-weight: 760; line-height: 1.08; letter-spacing: -1.6px; margin: 10px 0; }
+.report-header p { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 0; }
+.edition { text-align: right; flex-shrink: 0; }
+.edition span { display: block; font-size: 19px; font-weight: 700; }
+.edition small { display: block; margin-top: 8px; font-size: 10px; color: var(--muted); }
+.demo-notice { display: flex; justify-content: space-between; gap: 10px; font-size: 9px; letter-spacing: 1px; padding: 0 0 16px; margin-bottom: 23px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.demo-notice span { text-transform: none; letter-spacing: 0; }
+.comparison { color: var(--muted); font-size: 10px; line-height: 1.7; margin: 10px 0 15px; }
+.metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 22px 0; }
+.metric { border: 1px solid var(--line); background: var(--card); padding: 18px 14px; border-radius: 8px; min-width: 0; }
+.metric-label { color: var(--muted); font-size: 10px; display: flex; align-items: center; gap: 7px; }
+.metric-label::before { content: ""; display: inline-block; width: 3px; height: 11px; background: var(--accent); }
+.value-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+.value { font-size: 32px; font-weight: 650; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.unit { font-size: 10px; color: var(--muted); }
+.delta, .coverage { font-size: 10px; line-height: 1.5; }
+.coverage { color: var(--muted); margin-top: 5px; }
+.trendsbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0 14px; }
+.trendsbar h2 { font-size: 13px; font-weight: 650; margin: 0 0 4px; }
+.trendsbar p { font-size: 10px; color: var(--muted); margin: 0; }
+.segments { display: flex; padding: 3px; background: var(--grid); border-radius: 6px; flex-shrink: 0; }
+.segments button { border: 0; background: transparent; padding: 6px 10px; font-size: 10px; }
+.segments button[aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px #0000000d; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.chart-card { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 18px 18px 10px; }
+.charthead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.charthead h3 { font-size: 12px; font-weight: 650; margin: 0 0 5px; display: flex; align-items: center; gap: 7px; }
+.charthead h3::before { content: ""; width: 6px; height: 6px; border-radius: 1px; background: var(--accent); }
+.charthead p, .chart-subtitle { font-size: 9px; color: var(--muted); margin: 0; line-height: 1.6; }
+.chartunit { color: var(--muted); font-size: 9px; }
+.chart { height: 155px; margin-top: 12px; }
+.chart svg { width: 100%; height: 100%; overflow: visible; }
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.axis { fill: var(--muted); font-size: 10px; }
+.empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center; }
+.chartdetails { border-top: 1px solid var(--grid); padding-top: 8px; margin-top: 9px; color: var(--muted); font-size: 9px; }
+summary { cursor: pointer; width: fit-content; max-width: 100%; line-height: 1.6; }
+.tablewrap { max-height: 220px; overflow: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; text-align: left; font-size: 11px; }
+caption { text-align: left; padding: 4px; }
+th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; }
+.panel-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding-top: 12px; margin-top: 9px; border-top: 1px solid var(--grid); }
+.panel-stats strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.panel-stats span { display: block; color: var(--muted); font-size: 8px; margin-top: 5px; }
+.supplement { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.calendar-panel, .coverage-panel, .training, .heatmap-panel { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 18px; }
+.calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.calendar-head span { font-size: 9px; color: var(--muted); }
+.calendar-panel h3, .coverage-panel h3, .training h3, .heatmap-panel h3 { font-size: 11px; margin: 0 0 12px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; margin-top: 6px; }
+.calendar-day { border: 1px solid var(--line); border-radius: 3px; aspect-ratio: 1.6; display: grid; place-items: center; color: var(--muted); font-size: 10px; }
+.calendar-day.has-workout { background: #819e47; color: white; border-color: #819e47; }
+.calendar-key, .coverage-panel p, .training p, .heatmap-panel p { font-size: 9px; line-height: 1.6; color: var(--muted); margin: 12px 0 0; }
+.coverage-panel h3 { letter-spacing: 1px; font-size: 8px; }
+.coverage-row { display: grid; grid-template-columns: 105px 1fr 35px; align-items: center; gap: 9px; margin: 14px 0; font-size: 9px; }
+.coverage-row b { text-align: right; font-weight: 500; }
+.coverage-track { background: var(--grid); height: 6px; border-radius: 3px; overflow: hidden; }
+.coverage-track > div { height: 100%; border-radius: 3px; }
+.report-close { grid-column: 1/-1; background: #24261d; color: #fff; border-radius: 9px; padding: 24px; }
+.report-close .eyebrow { color: #aeb39a; font-size: 8px; }
+.report-close h2 { font-size: 25px; font-weight: 600; letter-spacing: -.6px; margin: 10px 0; }
+.report-close p { color: #bfc3ae; font-size: 11px; line-height: 1.7; margin: 0; }
+.report-sessions { grid-column: 1/-1; font-size: 10px; color: var(--muted); }
+.report-sessions .training { margin-top: 10px; }
+.session { display: grid; grid-template-columns: 50px 1fr auto; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 10px; }
+.session:first-of-type { margin-top: 15px; }
+.sessiondate { color: var(--muted); }
+.sessionduration { font-variant-numeric: tabular-nums; }
+.notes { margin-top: 20px; font-size: 10px; color: var(--muted); line-height: 1.8; }
+.notes p { overflow-wrap: anywhere; }
+.warning { color: #a66536; }
+.file-footer { max-width: 1040px; margin: 0 auto; padding: 22px 38px 35px; display: flex; justify-content: space-between; align-items: flex-start; gap: 35px; color: var(--muted); font-size: 9px; line-height: 1.7; }
+.file-footer span { max-width: 460px; }
+noscript { display: block; padding: 30px; }
+
+/* 01 / A compact paper report, with charts and evidence at the center. */
+body[data-template="report"] { background: #e7e7e0; }
+body[data-template="report"] main { max-width: 900px; background: #f8f8f3; box-shadow: 0 8px 40px #2b30200c; }
+body[data-template="report"] .edition span { color: #d66e4d; font-size: 16px; text-transform: uppercase; }
+body[data-template="report"] .report-header .eyebrow { color: #92958a; font-size: 8px; }
+body[data-template="report"] .trendsbar h2 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+body[data-template="report"] .file-footer { max-width: 900px; }
+
+/* 02 / A typographic monthly almanac, designed as a shareable portrait. */
+body[data-template="recap"] { --paper: #e7dfc9; --card: #f8f5ec; --ink: #30271f; --muted: #8b7d67; --line: #dcd4c1; --grid: #eae4d5; background: #d8d1bd; }
+body[data-template="recap"] main { max-width: 740px; background: var(--paper); padding: 40px; border: 1px solid #cec5ac; box-shadow: 0 10px 45px #56462b12; }
+body[data-template="recap"] .report-header { align-items: flex-end; margin-bottom: 24px; }
+body[data-template="recap"] .report-header .eyebrow { font-size: 8px; letter-spacing: 1.7px; }
+body[data-template="recap"] h1 { font-size: clamp(38px, 5vw, 66px); letter-spacing: -3px; font-weight: 950; margin: 12px 0 3px; line-height: .95; }
+body[data-template="recap"] .report-header p { color: #9f7152; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-top: 9px; }
+body[data-template="recap"] .edition span { font-size: 38px; color: #a99a7d; line-height: 1; font-weight: 800; }
+body[data-template="recap"] .edition small { max-width: 100px; font-size: 8px; line-height: 1.5; }
+.recap-banner { background: #d8d0b9; border-radius: 14px; padding: 21px 23px; }
+.recap-banner .eyebrow { display: block; color: #946c4e; letter-spacing: 1px; font-size: 8px; }
+.recap-banner strong { display: block; font-size: 24px; font-weight: 850; letter-spacing: -.8px; margin-top: 8px; }
+.recap-banner p { font-size: 10px; color: #7e715d; margin: 6px 0 0; line-height: 1.5; }
+body[data-template="recap"] .trendsbar { margin: 20px 0 12px; }
+body[data-template="recap"] .trendsbar h2 { display: none; }
+body[data-template="recap"] .segments { background: #dcd4c1; }
+body[data-template="recap"] .charts { gap: 9px; }
+body[data-template="recap"] .chart-card { border: 0; border-radius: 12px; padding: 19px 18px 10px; }
+body[data-template="recap"] .charthead { display: none; }
+body[data-template="recap"] .metric-label { text-transform: uppercase; font-size: 9px; color: var(--accent); font-weight: 750; gap: 7px; }
+body[data-template="recap"] .metric-label::before { height: 15px; }
+body[data-template="recap"] .value-line { margin: 8px 0 7px; gap: 5px; }
+body[data-template="recap"] .value { font-size: 43px; line-height: 1; font-weight: 900; letter-spacing: -1.5px; }
+body[data-template="recap"] .unit { font-size: 9px; }
+body[data-template="recap"] .delta { font-size: 10px; }
+body[data-template="recap"] .coverage { font-size: 8px; margin-top: 4px; }
+body[data-template="recap"] .compact-chart { height: 65px; margin-top: 9px; }
+body[data-template="recap"] .chartdetails { font-size: 8px; margin-top: 3px; padding-top: 7px; }
+body[data-template="recap"] .supplement { grid-template-columns: 1fr; gap: 9px; margin-top: 9px; }
+.recap-movement { background: var(--card); border-radius: 12px; display: grid; grid-template-columns: .85fr 1.15fr; align-items: center; }
+.recap-movement .metric { border: 0; padding: 19px; background: transparent; }
+.recap-movement .calendar-panel { border: 0; background: transparent; padding: 16px 18px 16px 0; }
+.recap-movement .calendar-head h3 { font-size: 9px; }
+.recap-movement .calendar-head span { display: none; }
+.recap-movement .calendar-grid { gap: 3px; }
+.recap-movement .calendar-day { aspect-ratio: 1.3; font-size: 8px; }
+.recap-movement .calendar-key { font-size: 7px; }
+body[data-template="recap"] .training { border: 0; border-radius: 12px; }
+body[data-template="recap"] .training h3 { text-transform: uppercase; letter-spacing: 1px; font-size: 9px; color: #9f7152; }
+body[data-template="recap"] .file-footer { max-width: 740px; }
+
+/* 03 / Dense, instrument-like panels for people who want to inspect signals. */
+body[data-template="observatory"] { --paper: #111318; --card: #191d24; --ink: #e7e9ef; --muted: #8b94a7; --line: #2a303c; --grid: #272d38; background: var(--paper); }
+body[data-template="observatory"] .toolbar { border-bottom: 1px solid var(--line); max-width: none; padding: 14px 30px; }
+body[data-template="observatory"] .brand span { background: #2d3545; color: #70d1b9; }
+body[data-template="observatory"] main { max-width: 1360px; padding: 25px 30px 10px; margin: auto; }
+body[data-template="observatory"] .demo-notice { border: 0; margin-bottom: 10px; padding: 0; font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+body[data-template="observatory"] .eyebrow { color: #65748d; font-size: 8px; }
+body[data-template="observatory"] h1 { font-size: 31px; letter-spacing: -1px; font-weight: 650; margin: 8px 0; }
+body[data-template="observatory"] .report-header { margin-bottom: 0; }
+body[data-template="observatory"] .report-header p { font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .6px; }
+body[data-template="observatory"] .edition span { color: #6cbfa9; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1px; }
+body[data-template="observatory"] .edition small { font-size: 9px; }
+body[data-template="observatory"] .comparison { margin: 12px 0 0; font-size: 9px; }
+body[data-template="observatory"] .metrics { gap: 8px; margin: 17px 0 0; }
+body[data-template="observatory"] .metric { border-radius: 3px; padding: 14px 15px 12px; border-top: 2px solid var(--accent); }
+body[data-template="observatory"] .value { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 29px; font-weight: 500; }
+body[data-template="observatory"] .metric-label { font-size: 9px; }
+body[data-template="observatory"] .metric-label::before { display: none; }
+body[data-template="observatory"] .delta { font-size: 9px; }
+body[data-template="observatory"] .coverage { font-size: 8px; }
+body[data-template="observatory"] .trendsbar { margin: 19px 0 11px; }
+body[data-template="observatory"] .trendsbar h2 { font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1.4px; }
+body[data-template="observatory"] .trendsbar p { font-size: 9px; }
+body[data-template="observatory"] .charts { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 9px; }
+body[data-template="observatory"] .chart-card { grid-column: span 6; border-radius: 3px; padding: 14px 16px 9px; }
+body[data-template="observatory"] .chart-steps { grid-column: span 8; }
+body[data-template="observatory"] .chart-sleep { grid-column: span 4; }
+body[data-template="observatory"] .charthead h3, body[data-template="observatory"] .chart-workouts h3 { font-size: 10px; letter-spacing: .6px; text-transform: uppercase; margin: 0 0 5px; }
+body[data-template="observatory"] .chart { height: 138px; margin-top: 9px; }
+body[data-template="observatory"] .axis { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+body[data-template="observatory"] .chartdetails { font-size: 8px; }
+.heatmap-panel { grid-column: span 8; border-radius: 3px; padding: 15px 16px 9px; }
+.heatmap-panel h3 { font-size: 9px; letter-spacing: .8px; margin: 0; }
+.heatmap-panel p { font-size: 8px; margin-top: 5px; }
+.heatmap-panel svg { display: block; width: 100%; height: 155px; margin-top: 10px; }
+.heatmap-scroll { overflow-x: auto; }
+.heat-label { font-size: 12px; }
+.observatory-coverage { grid-column: span 4; border-radius: 3px; padding: 17px 15px; }
+.observatory-coverage .coverage-row { grid-template-columns: 90px 1fr 30px; gap: 6px; margin: 18px 0; font-size: 8px; }
+body[data-template="observatory"] .chart-workouts { grid-column: 1/-1; }
+body[data-template="observatory"] .chart-workouts .chart { height: 120px; }
+body[data-template="observatory"] .supplement { display: block; margin-top: 9px; }
+body[data-template="observatory"] .training { border-radius: 3px; }
+body[data-template="observatory"] .training .session { display: inline-grid; width: 50%; padding-right: 20px; }
+body[data-template="observatory"] .file-footer { max-width: 1360px; padding-left: 30px; padding-right: 30px; }
+
+/* 04 / The original quiet editorial direction remains available. */
+body[data-template="field-notes"] { --paper: #f4f5ee; --card: #fffef9; --ink: #173f36; --muted: #65776e; --line: #dce2d5; --grid: #e8ebdf; }
+body[data-template="field-notes"] main { max-width: 1280px; padding-top: 35px; }
+body[data-template="field-notes"] h1 { font: 58px Georgia, serif; letter-spacing: -2px; max-width: 600px; }
+body[data-template="field-notes"] .report-header { margin-bottom: 30px; }
+body[data-template="field-notes"] .edition span { font: 25px Georgia, serif; }
+body[data-template="field-notes"] .metric:first-child { background: #173f36; color: #e0efb5; }
+body[data-template="field-notes"] .metric:first-child .metric-label, body[data-template="field-notes"] .metric:first-child .unit, body[data-template="field-notes"] .metric:first-child .coverage { color: #b7c8ba; }
+body[data-template="field-notes"] .chart { height: 180px; }
+body[data-template="field-notes"] .file-footer { max-width: 1280px; }
+
+@media (max-width: 1000px) {
+  main { margin: 0 18px; padding: 28px; }
+  .metrics { gap: 7px; }
+  .value { font-size: 27px; }
+  .unit { font-size: 9px; }
+  body[data-template="observatory"] .value { font-size: 24px; }
+  body[data-template="observatory"] .metric { padding: 12px 10px; }
+}
+@media (max-width: 720px) {
+  .toolbar { padding: 15px 18px; flex-wrap: wrap; }
+  .tools { gap: 7px; }
+  .tools label { display: none; }
+  button, select { padding: 7px 8px; font-size: 10px; }
+  main, body[data-template="recap"] main, body[data-template="observatory"] main { padding: 24px 18px; margin: 0 10px; }
+  .report-header { align-items: flex-start; gap: 16px; }
+  h1 { font-size: 29px; letter-spacing: -1px; }
+  .edition { max-width: 105px; }
+  .edition span { font-size: 15px; }
+  .edition small { font-size: 9px; line-height: 1.5; }
+  .report-header p { font-size: 10px; }
+  .demo-notice { font-size: 8px; letter-spacing: .6px; margin-bottom: 20px; }
+  .demo-notice span { max-width: 130px; text-align: right; }
+  .charts, .supplement { grid-template-columns: 1fr; }
+  .chart { height: 160px; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metrics .metric:last-child { grid-column: 1/-1; }
+  .metric { padding: 14px; }
+  .trendsbar h2 { font-size: 11px; }
+  .segments button { padding: 6px 8px; font-size: 9px; }
+  .trendsbar p { font-size: 9px; }
+  .file-footer { padding: 20px 28px; flex-direction: column; gap: 10px; }
+  body[data-template="recap"] h1 { font-size: 42px; letter-spacing: -2px; }
+  body[data-template="recap"] .edition { max-width: 60px; }
+  body[data-template="recap"] .edition span { font-size: 28px; }
+  body[data-template="recap"] .edition small { font-size: 7px; }
+  body[data-template="recap"] .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  body[data-template="recap"] .chart-card { padding: 14px 12px 8px; }
+  body[data-template="recap"] .value { font-size: 32px; }
+  body[data-template="recap"] .metric-label { font-size: 8px; min-height: 20px; }
+  body[data-template="recap"] .unit { font-size: 8px; }
+  body[data-template="recap"] .delta { font-size: 8px; }
+  body[data-template="recap"] .chartdetails { font-size: 7px; }
+  .recap-banner { padding: 18px; }
+  .recap-banner strong { font-size: 21px; }
+  .recap-movement { grid-template-columns: 1fr; }
+  .recap-movement .calendar-panel { padding: 0 18px 18px; }
+  .recap-movement .calendar-day { aspect-ratio: 1.6; }
+  body[data-template="observatory"] .charts { grid-template-columns: 1fr; }
+  body[data-template="observatory"] .chart-card, .heatmap-panel, .observatory-coverage { grid-column: 1; }
+  body[data-template="observatory"] .training .session { display: grid; width: 100%; padding-right: 0; }
+  .heatmap-panel svg { height: 150px; min-width: 640px; }
+  body[data-template="field-notes"] h1 { font-size: 38px; }
+  body[data-template="field-notes"] .edition span { font-size: 17px; }
+}
+@media (max-width: 400px) {
+  .brand { font-size: 18px; }
+  .tools { width: 100%; justify-content: space-between; }
+  .report-header { display: block; }
+  .edition { margin-top: 15px; text-align: left; max-width: none; }
+  .edition span, .edition small { display: inline; }
+  .edition small { margin-left: 10px; }
+  body[data-template="recap"] .edition { max-width: none; }
+  body[data-template="recap"] .edition span { font-size: 18px; }
+  body[data-template="recap"] .edition small { font-size: 8px; }
+  .trendsbar { gap: 8px; }
+  .segments button { padding: 6px; }
+}
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  .toolbar { display: none; }
+  body, body[data-template="report"], body[data-template="recap"] { background: white; }
+  main, body[data-template] main { margin: 0 auto; padding: 10px; max-width: none; box-shadow: none; border: 0; }
+  .report-header { margin-bottom: 15px; }
+  .segments, .chartdetails, .notes { display: none; }
+  .chart-card, .calendar-panel, .coverage-panel, .training, .report-close, .heatmap-panel { break-inside: avoid; }
+  .charts { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chart { height: 130px; }
+  .demo-notice { margin-bottom: 15px; }
+  .file-footer { padding: 15px 10px; }
+  body[data-template="recap"] main { max-width: 670px; }
+  body[data-template="observatory"] { background: #111318; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<header class="toolbar">
+  <a href="#dashboard" class="brand" aria-label="healthai dashboard"><span aria-hidden="true">∿</span> healthai</a>
+  <div class="tools"><label for="template">Template</label><select id="template">
+    <option value="report">01 — Monthly Report</option>
+    <option value="recap">02 — Monthly Recap</option>
+    <option value="observatory">03 — Observatory</option>
+    <option value="field-notes">04 — Field Notes</option>
+  </select><button id="print">Print / Save PDF ↗</button></div>
+</header>
+<main id="dashboard" tabindex="-1"></main>
+<footer class="file-footer"><span id="freshness"></span><span>Offline snapshot · No uploads<br>This file contains your health data. Share intentionally.</span></footer>
+<noscript>Enable JavaScript to display the data embedded in this file. No internet connection is needed.</noscript>
+<script id="health-data" type="application/json">{"schema_version": 1, "demo": true, "month": "October 2026", "month_start": "2026-10-01", "through": "2026-10-31", "latest": "2026-10-31", "window_start": "2026-08-03", "previous_start": "2026-09-01", "previous_end": "2026-09-30", "generated_at": "2026-11-09T10:58:09+00:00", "metrics": {"steps": {"label": "Daily steps", "unit": "steps", "decimals": 0}, "sleep": {"label": "Time asleep", "unit": "hours", "decimals": 1}, "resting_hr": {"label": "Resting heart rate", "unit": "bpm", "decimals": 1}, "hrv": {"label": "Heart rate variability", "unit": "ms", "decimals": 1}, "workouts": {"label": "Workout time", "unit": "min", "decimals": 0}}, "series": {"steps": {"2026-08-03": 8219, "2026-08-04": 7371, "2026-08-05": 9397, "2026-08-06": 7520, "2026-08-07": 8021, "2026-08-08": 4889, "2026-08-09": 5162, "2026-08-10": 3954, "2026-08-11": 5357, "2026-08-12": 7185, "2026-08-13": 8460, "2026-08-14": 8608, "2026-08-15": 7807, "2026-08-16": 7786, "2026-08-17": 7629, "2026-08-18": 4421, "2026-08-19": 6361, "2026-08-20": 5239, "2026-08-21": 5941, "2026-08-22": 8294, "2026-08-23": 8265, "2026-08-24": 8452, "2026-08-25": 7134, "2026-08-26": 6818, "2026-08-27": 6523, "2026-08-28": 5468, "2026-08-29": 4376, "2026-08-30": 8330, "2026-08-31": 7045, "2026-09-01": 8415, "2026-09-02": 9973, "2026-09-03": 8411, "2026-09-04": 7218, "2026-09-05": 5206, "2026-09-06": 4545, "2026-09-07": 6348, "2026-09-08": 6266, "2026-09-09": 9218, "2026-09-10": 10677, "2026-09-11": 10088, "2026-09-12": 8287, "2026-09-13": 7141, "2026-09-14": 6603, "2026-09-15": 3857, "2026-09-16": 6594, "2026-09-17": 6771, "2026-09-18": 7479, "2026-09-19": 10678, "2026-09-20": 8966, "2026-09-21": 6918, "2026-09-22": 6594, "2026-09-23": 5943, "2026-09-24": 3959, "2026-09-25": 6404, "2026-09-26": 6485, "2026-09-27": 8275, "2026-09-28": 9970, "2026-09-29": 8511, "2026-09-30": 6349, "2026-10-01": 7944, "2026-10-02": 5536, "2026-10-03": 6339, "2026-10-04": 5707, "2026-10-05": 9087, "2026-10-06": 9209, "2026-10-07": 10669, "2026-10-08": 10919, "2026-10-09": 8039, "2026-10-10": 6018, "2026-10-11": 7642, "2026-10-12": 6863, "2026-10-13": 6124, "2026-10-14": 7617, "2026-10-15": 11071, "2026-10-16": 10799, "2026-10-17": 10952, "2026-10-18": 9740, "2026-10-19": 8596, "2026-10-20": 6982, "2026-10-21": 6971, "2026-10-22": 7069, "2026-10-23": 9309, "2026-10-24": 8912, "2026-10-25": 10487, "2026-10-26": 10018, "2026-10-27": 7749, "2026-10-28": 7602, "2026-10-29": 5667, "2026-10-30": 5860, "2026-10-31": 8262}, "sleep": {"2026-08-03": 6.48, "2026-08-04": 7.38, "2026-08-05": 6.35, "2026-08-06": 7.2, "2026-08-07": 6.65, "2026-08-08": 7.51, "2026-08-09": 6.74, "2026-08-10": 6.45, "2026-08-11": 7.59, "2026-08-13": 7.22, "2026-08-14": 7.54, "2026-08-15": 6.91, "2026-08-16": 6.87, "2026-08-17": 7.34, "2026-08-18": 7.04, "2026-08-19": 7.19, "2026-08-20": 7.61, "2026-08-21": 6.64, "2026-08-22": 6.64, "2026-08-23": 6.72, "2026-08-24": 7.5, "2026-08-25": 7.9, "2026-08-26": 6.45, "2026-08-27": 6.98, "2026-08-28": 7.15, "2026-08-29": 7.39, "2026-08-30": 6.84, "2026-08-31": 7.83, "2026-09-01": 7.11, "2026-09-02": 7.11, "2026-09-03": 7.83, "2026-09-05": 7.71, "2026-09-06": 7.7, "2026-09-07": 7.61, "2026-09-08": 7.36, "2026-09-09": 7.7, "2026-09-10": 7.4, "2026-09-11": 7.34, "2026-09-12": 7.02, "2026-09-13": 7.19, "2026-09-14": 7.31, "2026-09-15": 7.12, "2026-09-16": 6.51, "2026-09-17": 7.56, "2026-09-18": 7.35, "2026-09-19": 6.39, "2026-09-20": 7.47, "2026-09-21": 6.6, "2026-09-22": 6.7, "2026-09-23": 6.46, "2026-09-24": 7.78, "2026-09-25": 7.07, "2026-09-26": 6.91, "2026-09-28": 7.36, "2026-09-29": 6.65, "2026-09-30": 7.5, "2026-10-01": 6.9, "2026-10-02": 6.76, "2026-10-03": 6.84, "2026-10-04": 7.64, "2026-10-05": 7.16, "2026-10-06": 7.07, "2026-10-07": 7.16, "2026-10-08": 8.25, "2026-10-09": 7.46, "2026-10-10": 8.06, "2026-10-11": 7.13, "2026-10-12": 6.66, "2026-10-13": 7.07, "2026-10-14": 7.09, "2026-10-15": 7.66, "2026-10-16": 7.05, "2026-10-17": 7.33, "2026-10-18": 8.22, "2026-10-19": 7.33, "2026-10-21": 6.89, "2026-10-22": 6.99, "2026-10-23": 8.06, "2026-10-24": 8.13, "2026-10-25": 6.69, "2026-10-26": 7.93, "2026-10-27": 7.91, "2026-10-28": 7.01, "2026-10-29": 7.01, "2026-10-30": 8.03, "2026-10-31": 7.47}, "resting_hr": {"2026-08-03": 61.4, "2026-08-04": 62.4, "2026-08-05": 57.6, "2026-08-06": 61.3, "2026-08-07": 60.5, "2026-08-08": 58.0, "2026-08-09": 58.3, "2026-08-10": 57.6, "2026-08-11": 61.4, "2026-08-12": 57.5, "2026-08-13": 61.2, "2026-08-14": 62.9, "2026-08-15": 59.7, "2026-08-16": 61.0, "2026-08-17": 60.7, "2026-08-18": 58.6, "2026-08-19": 61.1, "2026-08-20": 61.8, "2026-08-21": 62.7, "2026-08-22": 60.0, "2026-08-23": 58.5, "2026-08-24": 59.6, "2026-08-25": 57.8, "2026-08-26": 57.3, "2026-08-27": 57.4, "2026-08-28": 62.8, "2026-08-29": 57.7, "2026-08-30": 58.8, "2026-08-31": 62.3, "2026-09-01": 57.6, "2026-09-02": 58.2, "2026-09-03": 62.5, "2026-09-04": 58.9, "2026-09-05": 62.0, "2026-09-06": 62.7, "2026-09-07": 62.9, "2026-09-08": 62.7, "2026-09-09": 59.5, "2026-09-10": 61.3, "2026-09-11": 59.6, "2026-09-12": 58.5, "2026-09-13": 60.5, "2026-09-14": 58.4, "2026-09-15": 58.7, "2026-09-16": 62.6, "2026-09-17": 61.8, "2026-09-18": 59.1, "2026-09-19": 60.9, "2026-09-20": 61.8, "2026-09-21": 59.7, "2026-09-22": 62.5, "2026-09-23": 60.9, "2026-09-24": 62.1, "2026-09-25": 62.2, "2026-09-26": 62.9, "2026-09-27": 59.5, "2026-09-28": 59.9, "2026-09-29": 57.4, "2026-09-30": 57.3, "2026-10-01": 60.8, "2026-10-02": 55.4, "2026-10-03": 60.3, "2026-10-04": 57.5, "2026-10-05": 56.6, "2026-10-06": 55.8, "2026-10-07": 59.5, "2026-10-08": 61.0, "2026-10-09": 55.8, "2026-10-10": 57.2, "2026-10-11": 60.9, "2026-10-12": 59.9, "2026-10-13": 60.3, "2026-10-14": 58.6, "2026-10-15": 56.6, "2026-10-16": 60.4, "2026-10-17": 56.7, "2026-10-18": 56.0, "2026-10-19": 55.1, "2026-10-20": 55.2, "2026-10-21": 55.8, "2026-10-22": 56.5, "2026-10-23": 57.4, "2026-10-24": 56.4, "2026-10-25": 59.4, "2026-10-26": 60.2, "2026-10-27": 55.6, "2026-10-28": 59.9, "2026-10-29": 59.0, "2026-10-30": 60.8, "2026-10-31": 59.1}, "hrv": {"2026-08-03": 38.4, "2026-08-04": 35.6, "2026-08-05": 38.2, "2026-08-06": 46.6, "2026-08-07": 48.6, "2026-08-09": 47.7, "2026-08-10": 49.3, "2026-08-11": 43.7, "2026-08-12": 39.3, "2026-08-13": 34.8, "2026-08-14": 49.4, "2026-08-15": 49.0, "2026-08-16": 46.6, "2026-08-17": 37.1, "2026-08-18": 50.7, "2026-08-19": 49.2, "2026-08-20": 41.2, "2026-08-21": 49.8, "2026-08-22": 49.9, "2026-08-23": 44.1, "2026-08-24": 44.5, "2026-08-26": 36.0, "2026-08-27": 40.9, "2026-08-28": 49.5, "2026-08-29": 49.9, "2026-08-30": 36.8, "2026-08-31": 38.7, "2026-09-01": 45.3, "2026-09-02": 40.7, "2026-09-03": 50.5, "2026-09-04": 34.4, "2026-09-05": 39.5, "2026-09-06": 35.5, "2026-09-07": 43.6, "2026-09-08": 37.0, "2026-09-09": 37.8, "2026-09-10": 41.2, "2026-09-12": 35.2, "2026-09-13": 34.1, "2026-09-14": 50.3, "2026-09-15": 42.7, "2026-09-16": 44.3, "2026-09-17": 37.4, "2026-09-18": 41.4, "2026-09-19": 45.6, "2026-09-20": 36.0, "2026-09-21": 41.6, "2026-09-22": 42.0, "2026-09-23": 43.7, "2026-09-24": 37.0, "2026-09-25": 50.2, "2026-09-26": 38.8, "2026-09-27": 51.2, "2026-09-29": 47.2, "2026-09-30": 44.5, "2026-10-01": 39.4, "2026-10-02": 53.5, "2026-10-03": 42.4, "2026-10-04": 48.5, "2026-10-05": 50.1, "2026-10-06": 49.6, "2026-10-07": 39.3, "2026-10-08": 39.3, "2026-10-09": 44.3, "2026-10-10": 40.8, "2026-10-11": 52.5, "2026-10-12": 43.4, "2026-10-13": 51.4, "2026-10-14": 50.9, "2026-10-16": 38.9, "2026-10-17": 38.1, "2026-10-18": 46.0, "2026-10-19": 39.4, "2026-10-20": 44.6, "2026-10-21": 43.5, "2026-10-22": 39.9, "2026-10-23": 49.2, "2026-10-24": 40.9, "2026-10-25": 44.0, "2026-10-26": 52.6, "2026-10-27": 53.7, "2026-10-28": 46.3, "2026-10-29": 45.2, "2026-10-30": 43.0, "2026-10-31": 53.2}, "workouts": {"2026-08-03": 35, "2026-08-05": 60, "2026-08-08": 50, "2026-08-10": 60, "2026-08-12": 60, "2026-08-15": 35, "2026-08-17": 35, "2026-08-19": 30, "2026-08-22": 50, "2026-08-24": 45, "2026-08-26": 35, "2026-08-29": 45, "2026-08-31": 60, "2026-09-02": 35, "2026-09-05": 30, "2026-09-07": 35, "2026-09-09": 60, "2026-09-12": 30, "2026-09-14": 45, "2026-09-16": 50, "2026-09-19": 30, "2026-09-21": 45, "2026-09-23": 30, "2026-09-26": 50, "2026-09-28": 35, "2026-09-30": 60, "2026-10-03": 60, "2026-10-05": 45, "2026-10-07": 50, "2026-10-10": 60, "2026-10-12": 30, "2026-10-14": 35, "2026-10-17": 35, "2026-10-19": 35, "2026-10-21": 30, "2026-10-24": 35, "2026-10-26": 45, "2026-10-28": 45, "2026-10-31": 45}}, "summary": {"steps": {"value": 8185.774193548387, "previous": 7404.966666666666, "days": 31, "previous_days": 30, "change": 10.544375984790223}, "sleep": {"value": 7.365333333333334, "previous": 7.207857142857143, "days": 30, "previous_days": 28, "change": 2.1847851220559678}, "resting_hr": {"value": 58.05483870967742, "previous": 60.486666666666665, "days": 31, "previous_days": 30, "change": -4.020436388718029}, "hrv": {"value": 45.46333333333334, "previous": 41.739285714285714, "days": 30, "previous_days": 28, "change": 8.92216422805968}, "workouts": {"value": 550, "previous": 535, "days": 13, "previous_days": 13, "change": 2.803738317757009}}, "workouts": [{"date": "2026-08-03", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-05", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-08", "activity": "Running", "minutes": 50}, {"date": "2026-08-10", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-12", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-15", "activity": "Running", "minutes": 35}, {"date": "2026-08-17", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-19", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-08-22", "activity": "Running", "minutes": 50}, {"date": "2026-08-24", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-08-26", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-29", "activity": "Running", "minutes": 45}, {"date": "2026-08-31", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-09-02", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-05", "activity": "Running", "minutes": 30}, {"date": "2026-09-07", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-09", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-09-12", "activity": "Running", "minutes": 30}, {"date": "2026-09-14", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-09-16", "activity": "TraditionalStrengthTraining", "minutes": 50}, {"date": "2026-09-19", "activity": "Running", "minutes": 30}, {"date": "2026-09-21", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-09-23", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-09-26", "activity": "Running", "minutes": 50}, {"date": "2026-09-28", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-30", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-10-03", "activity": "Running", "minutes": 60}, {"date": "2026-10-05", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-07", "activity": "TraditionalStrengthTraining", "minutes": 50}, {"date": "2026-10-10", "activity": "Running", "minutes": 60}, {"date": "2026-10-12", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-10-14", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-10-17", "activity": "Running", "minutes": 35}, {"date": "2026-10-19", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-10-21", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-10-24", "activity": "Running", "minutes": 35}, {"date": "2026-10-26", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-28", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-31", "activity": "Running", "minutes": 45}], "sources": ["Demo Apple Watch", "Demo iPhone"], "warnings": [], "template": "field-notes"}</script>
+<script>'use strict';
+
+const data = JSON.parse(document.getElementById('health-data').textContent);
+const $ = id => document.getElementById(id);
+const svgNS = 'http://www.w3.org/2000/svg';
+const themes = {
+  report: {name: 'Monthly Report', colors: {steps: '#3978bb', sleep: '#9073c4', resting_hr: '#d57955', hrv: '#7e9d42', workouts: '#809c45'}},
+  recap: {name: 'Monthly Recap', colors: {steps: '#ae8938', sleep: '#b97160', resting_hr: '#6c9290', hrv: '#7c7caa', workouts: '#82914d'}},
+  observatory: {name: 'Observatory', colors: {steps: '#e2b04f', sleep: '#a595ee', resting_hr: '#e57987', hrv: '#5fc5b4', workouts: '#729cf2'}},
+  'field-notes': {name: 'Field Notes', colors: {steps: '#bd8332', sleep: '#8373ac', resting_hr: '#60889a', hrv: '#39795c', workouts: '#b36f58'}},
+};
+let activeTemplate = themes[data.template] ? data.template : 'report';
+let range = 30;
+const monthName = data.month.replace(/ \d{4}$/, '');
+const year = data.month_start.slice(0, 4);
+const elapsedDays = Number(data.through.slice(-2));
+const chartKeys = ['steps', 'sleep', 'resting_hr', 'hrv'];
+const descriptions = {
+  steps: 'Daily totals · overlapping sources reconciled',
+  sleep: 'Recorded sleep · hours per day',
+  resting_hr: 'Daily mean · resting measurements',
+  hrv: 'Daily mean · SDNN samples',
+  workouts: 'Recorded active minutes · no inferred rest days',
+};
+const dateValue = text => new Date(text + 'T12:00:00Z');
+const dayString = value => value.toISOString().slice(0, 10);
+const dateLabel = text => dateValue(text).toLocaleDateString('en-US', {month: 'short', day: 'numeric', timeZone: 'UTC'});
+const num = (value, digits = 0) => value === null ? '—' : value.toLocaleString('en-US', {maximumFractionDigits: digits, minimumFractionDigits: digits});
+const color = key => themes[activeTemplate].colors[key];
+const element = (tag, cls, text) => {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+function svgElement(tag, attributes = {}, text) {
+  const node = document.createElementNS(svgNS, tag);
+  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function datesBetween(first, last) {
+  const result = [];
+  for (let d = dateValue(first); d <= dateValue(last); d.setUTCDate(d.getUTCDate() + 1)) result.push(dayString(d));
+  return result;
+}
+function trendDays() {
+  const start = dateValue(data.through);
+  start.setUTCDate(start.getUTCDate() - range + 1);
+  return datesBetween(dayString(start) < data.window_start ? data.window_start : dayString(start), data.through);
+}
+function monthEntries(key) {
+  return Object.entries(data.series[key]).filter(([d]) => d >= data.month_start && d <= data.through);
+}
+const workouts = data.workouts.filter(w => w.date >= data.month_start && w.date <= data.through);
+
+function changeText(key) {
+  const change = data.summary[key].change;
+  if (change === null) return 'No prior comparison';
+  return (change > 0 ? '↑ ' : change < 0 ? '↓ ' : '') + num(Math.abs(change), 1) + '% vs prior period';
+}
+function coverageText(key) {
+  const s = data.summary[key];
+  return s.days + ' recorded days · ' + s.previous_days + ' prior';
+}
+function unitLabel(key) {
+  return data.metrics[key].unit + (key === 'workouts' ? ' total' : key === 'steps' || key === 'sleep' ? ' / day' : ' daily avg');
+}
+function stat(key, cls = 'metric') {
+  const meta = data.metrics[key], summary = data.summary[key];
+  const node = element('article', cls);
+  node.setAttribute('aria-label', meta.label);
+  node.style.setProperty('--accent', color(key));
+  node.dataset.metric = key;
+  node.append(element('div', 'metric-label', meta.label));
+  const value = element('div', 'value-line');
+  value.append(element('strong', 'value', num(summary.value, meta.decimals)), element('span', 'unit', unitLabel(key)));
+  node.append(value, element('div', 'delta', changeText(key)), element('div', 'coverage', coverageText(key)));
+  return node;
+}
+function demoBadge() {
+  if (!data.demo) return;
+  const notice = element('div', 'demo-notice', 'FICTIONAL SAMPLE DATA');
+  notice.append(element('span', '', 'Same month. Different perspective.'));
+  $('demo-slot').append(notice);
+}
+function comparison() {
+  return 'Through ' + dateLabel(data.through) + ' · comparison ' + dateLabel(data.previous_start) + '–' + dateLabel(data.previous_end);
+}
+function controls() {
+  const row = element('div', 'trendsbar');
+  const heading = element('div');
+  heading.append(element('h2', '', activeTemplate === 'observatory' ? 'SIGNAL HISTORY' : 'Your daily patterns'));
+  const period = element('p'); period.id = 'trend-period'; period.setAttribute('aria-live', 'polite'); heading.append(period);
+  const group = element('div', 'segments'); group.setAttribute('role', 'group'); group.setAttribute('aria-label', 'Trend range');
+  for (const count of [7, 30, 90]) {
+    const button = element('button', '', count + ' days');
+    button.dataset.range = count;
+    button.setAttribute('aria-pressed', String(range === count));
+    button.addEventListener('click', () => {range = count; renderTrends();});
+    group.append(button);
+  }
+  row.append(heading, group);
+  return row;
+}
+function dataTable(key, days) {
+  const meta = data.metrics[key], points = data.series[key];
+  const recorded = days.filter(d => points[d] !== undefined).length;
+  const details = element('details', 'chartdetails');
+  details.append(element('summary', '', recorded + ' of ' + days.length + ' days recorded · Daily values'));
+  const wrap = element('div', 'tablewrap'), table = element('table');
+  table.append(element('caption', '', meta.label + ' · ' + meta.unit));
+  const thead = element('thead'), row = element('tr');
+  for (const title of ['Date', meta.unit]) {const th = element('th', '', title); th.scope = 'col'; row.append(th);}
+  thead.append(row); table.append(thead);
+  const tbody = element('tbody');
+  for (const day of days) {
+    const tr = element('tr');
+    tr.append(element('td', '', day), element('td', '', points[day] === undefined ? 'No data' : num(points[day], meta.decimals)));
+    tbody.append(tr);
+  }
+  table.append(tbody); wrap.append(table); details.append(wrap);
+  return details;
+}
+
+function chartWidth(key) {
+  const narrow = window.matchMedia('(max-width: 720px)').matches;
+  let fraction = narrow && activeTemplate !== 'recap' ? 1 : .5;
+  if (activeTemplate === 'observatory' && !narrow) {
+    fraction = key === 'steps' ? 2 / 3 : key === 'sleep' ? 1 / 3 : key === 'workouts' ? 1 : .5;
+  }
+  return Math.max(130, $('charts').getBoundingClientRect().width * fraction - 42);
+}
+function timeChart(key, days, mode = 'line', compact = false) {
+  const meta = data.metrics[key], values = days.map(d => data.series[key][d] ?? null);
+  const known = values.filter(v => v !== null), plot = element('div', 'chart' + (compact ? ' compact-chart' : ''));
+  if (!known.length) {plot.append(element('div', 'empty', 'No recorded data in this range')); return plot;}
+  const W = chartWidth(key), H = compact ? 65 : activeTemplate === 'observatory' ? key === 'workouts' ? 120 : 138 : 155;
+  const L = compact ? 4 : 38, R = 10, T = 12, B = compact ? 6 : 24;
+  const IW = W - L - R, IH = H - T - B;
+  const svg = svgElement('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': meta.label + ': ' + known.length + ' recorded days. Exact values in the daily table.'});
+  const max = Math.max(...known), min = Math.min(...known), baseline = mode === 'bar' || mode === 'area';
+  const low = baseline ? 0 : Math.max(0, Math.floor(min - (max - min) * .18 - 1));
+  const high = baseline ? Math.max(1, Math.ceil(max * 1.1)) : Math.max(low + 2, Math.ceil(max + (max - min) * .18 + 1));
+  const x = i => L + (i + .5) * IW / days.length;
+  const y = v => T + IH - (v - low) / (high - low) * IH;
+  if (!compact) {
+    for (let i = 0; i <= 3; i++) {
+      const v = low + (high - low) * i / 3, yy = y(v);
+      svg.append(svgElement('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: 'gridline'}));
+      svg.append(svgElement('text', {x: L - 8, y: yy + 3, 'text-anchor': 'end', class: 'axis'}, v >= 1000 ? num(v / 1000, 1) + 'k' : num(v, key === 'sleep' ? 1 : 0)));
+    }
+  }
+  if (mode === 'bar') {
+    values.forEach((v, i) => {
+      if (v === null) return;
+      const mark = svgElement('rect', {x: x(i) - IW / days.length * .34, y: y(v), width: Math.max(1, IW / days.length * .68), height: Math.max(.8, T + IH - y(v)), rx: activeTemplate === 'observatory' ? 0 : 1.5, fill: color(key)});
+      mark.append(svgElement('title', {}, days[i] + ': ' + num(v, meta.decimals) + ' ' + meta.unit)); svg.append(mark);
+    });
+  } else {
+    let segments = [], segment = [];
+    values.forEach((v, i) => {
+      if (v === null) {if (segment.length) segments.push(segment); segment = []; return;}
+      segment.push([x(i), y(v)]);
+    });
+    if (segment.length) segments.push(segment);
+    for (const points of segments) {
+      const path = 'M' + points.map(p => p.join(' ')).join(' L');
+      if (mode === 'area') {
+        const area = path + ` L${points.at(-1)[0]} ${T + IH} L${points[0][0]} ${T + IH} Z`;
+        svg.append(svgElement('path', {d: area, fill: color(key), opacity: .16}));
+      }
+      if (mode !== 'dot') svg.append(svgElement('path', {d: path, fill: 'none', stroke: color(key), 'stroke-width': compact ? 2.5 : 2, 'stroke-linejoin': 'round'}));
+    }
+    values.forEach((v, i) => {
+      if (v === null) return;
+      if (mode === 'dot') svg.append(svgElement('line', {x1: x(i), x2: x(i), y1: y(v), y2: T + IH, stroke: color(key), opacity: .2}));
+      const circle = svgElement('circle', {cx: x(i), cy: y(v), r: mode === 'dot' ? 3.3 : compact ? 1.6 : 2.3, fill: color(key)});
+      circle.append(svgElement('title', {}, days[i] + ': ' + num(v, meta.decimals) + ' ' + meta.unit)); svg.append(circle);
+    });
+  }
+  if (!compact) for (const i of [0, Math.floor((days.length - 1) / 2), days.length - 1]) {
+    svg.append(svgElement('text', {x: x(i), y: H - 5, 'text-anchor': i === 0 ? 'start' : i === days.length - 1 ? 'end' : 'middle', class: 'axis'}, dateLabel(days[i])));
+  }
+  plot.append(svg);
+  return plot;
+}
+
+function sleepDistribution(days) {
+  const values = days.map(d => data.series.sleep[d]).filter(v => v !== undefined);
+  if (!values.length) return timeChart('sleep', days);
+  const bins = new Map();
+  for (const value of values) {const bin = Math.floor(value); bins.set(bin, (bins.get(bin) || 0) + 1);}
+  const first = Math.floor(Math.min(...values)), last = Math.floor(Math.max(...values));
+  // Guard unusually large imported values from allocating an unbounded bin range.
+  if (last - first > 24) return timeChart('sleep', days, 'bar');
+  const keys = Array.from({length: last - first + 1}, (_, i) => first + i);
+  const plot = element('div', 'chart distribution');
+  const W = chartWidth('sleep');
+  const svg = svgElement('svg', {viewBox: `0 0 ${W} 165`, role: 'img', 'aria-label': 'Sleep duration distribution. Bar heights count recorded days in each one-hour bin; exact daily values below.'});
+  const max = Math.max(...bins.values()), width = (W - 60) / keys.length;
+  for (const [i, bin] of keys.entries()) {
+    const count = bins.get(bin) || 0, height = 110 * count / max;
+    const rect = svgElement('rect', {x: 30 + i * width + width * .12, y: 127 - height, width: width * .76, height, rx: 3, fill: color('sleep'), opacity: .9});
+    rect.append(svgElement('title', {}, `${bin}–${bin + 1} hours: ${count} recorded days`));
+    svg.append(rect, svgElement('text', {x: 30 + (i + .5) * width, y: 117 - height, 'text-anchor': 'middle', class: 'axis'}, String(count)));
+    svg.append(svgElement('text', {x: 30 + (i + .5) * width, y: 149, 'text-anchor': 'middle', class: 'axis'}, `${bin}–${bin + 1}h`));
+  }
+  plot.append(svg);
+  return plot;
+}
+
+function chartPanel(key, days) {
+  const meta = data.metrics[key], card = element('article', 'chart-card chart-' + key);
+  card.style.setProperty('--accent', color(key));
+  const head = element('div', 'charthead'), text = element('div');
+  text.append(element('h3', '', meta.label), element('p', '', activeTemplate === 'report' && key === 'sleep' ? 'Sleep duration distribution · recorded days per bin' : descriptions[key]));
+  head.append(text, element('span', 'chartunit', meta.unit)); card.append(head);
+  if (activeTemplate === 'recap') card.prepend(stat(key, 'tile-stat'));
+  const mode = key === 'steps' ? (activeTemplate === 'observatory' ? 'area' : 'bar') : key === 'sleep' ? 'bar' : key === 'hrv' && activeTemplate === 'report' ? 'dot' : 'line';
+  card.append(activeTemplate === 'report' && key === 'sleep' ? sleepDistribution(days) : timeChart(key, days, mode, activeTemplate === 'recap'));
+  if (activeTemplate === 'report') {
+    const s = data.summary[key], summary = element('div', 'panel-stats');
+    const a = element('div'), b = element('div'), c = element('div');
+    a.append(element('strong', '', num(s.value, meta.decimals)), element('span', '', 'Month avg · ' + meta.unit));
+    b.append(element('strong', '', s.change === null ? '—' : (s.change > 0 ? '+' : '') + num(s.change, 1) + '%'), element('span', '', 'vs prior period'));
+    c.append(element('strong', '', String(s.days)), element('span', '', 'Recorded days'));
+    summary.append(a, b, c); card.append(summary);
+  }
+  card.append(dataTable(key, days));
+  return card;
+}
+
+function calendarPanel() {
+  const card = element('article', 'calendar-panel');
+  const head = element('div', 'calendar-head');
+  head.append(element('h3', '', 'A month of movement'), element('span', '', workouts.length + ' recorded sessions'));
+  const grid = element('div', 'calendar-grid'); grid.setAttribute('aria-label', 'Recorded workout days in the selected month');
+  for (const day of datesBetween(data.month_start, data.through)) {
+    const sessions = workouts.filter(w => w.date === day);
+    const cell = element('div', 'calendar-day' + (sessions.length ? ' has-workout' : ''), String(Number(day.slice(-2))));
+    const description = day + ': ' + (sessions.length ? sessions.length + ' recorded sessions, ' + num(sessions.reduce((s, w) => s + w.minutes, 0), 1) + ' minutes' : 'no recorded workout');
+    cell.title = description; cell.setAttribute('aria-label', description); grid.append(cell);
+  }
+  card.append(head, grid, element('p', 'calendar-key', 'Filled = recorded workout · outlined = no recorded workout, not necessarily a rest day'));
+  return card;
+}
+function coveragePanel() {
+  const panel = element('article', 'coverage-panel');
+  panel.append(element('h3', '', 'HOW MUCH OF THE MONTH IS RECORDED'));
+  for (const key of chartKeys) {
+    const row = element('div', 'coverage-row'), track = element('div', 'coverage-track'), fill = element('div');
+    fill.style.width = (100 * data.summary[key].days / elapsedDays) + '%'; fill.style.background = color(key); track.append(fill);
+    row.append(element('span', '', data.metrics[key].label), track, element('b', '', data.summary[key].days + '/' + elapsedDays)); panel.append(row);
+  }
+  panel.append(element('p', '', 'Recorded-day coverage, not a health score or goal.'));
+  return panel;
+}
+function heatmap(days) {
+  const panel = element('article', 'heatmap-panel');
+  panel.append(element('h3', '', 'DAILY SIGNAL MAP'), element('p', '', 'Each row uses its own recorded range. Outlines indicate missing data.'));
+  const svg = svgElement('svg', {viewBox: '0 0 850 176', role: 'img', 'aria-label': 'Daily metric heatmap. Each row is independently scaled. Exact values in each chart’s table.'});
+  const width = 708 / days.length;
+  chartKeys.forEach((key, row) => {
+    const values = days.map(d => data.series[key][d]), known = values.filter(v => v !== undefined);
+    const low = Math.min(...known), high = Math.max(...known);
+    svg.append(svgElement('text', {x: 0, y: 28 + row * 33, class: 'axis heat-label'}, {steps: 'Steps', sleep: 'Sleep', resting_hr: 'Resting HR', hrv: 'HRV'}[key]));
+    values.forEach((v, i) => {
+      const missing = v === undefined;
+      const rect = svgElement('rect', {x: 118 + i * width, y: 9 + row * 33, width: Math.max(1, width - 2), height: 24, rx: 1,
+        fill: missing ? 'none' : color(key), 'fill-opacity': missing ? 0 : high === low ? .7 : .2 + .8 * (v - low) / (high - low), stroke: missing ? 'var(--line)' : 'none'});
+      rect.append(svgElement('title', {}, days[i] + ' · ' + data.metrics[key].label + ': ' + (missing ? 'No data' : num(v, data.metrics[key].decimals) + ' ' + data.metrics[key].unit))); svg.append(rect);
+    });
+  });
+  svg.append(svgElement('text', {x: 118, y: 163, class: 'axis'}, dateLabel(days[0])), svgElement('text', {x: 826, y: 163, 'text-anchor': 'end', class: 'axis'}, dateLabel(days.at(-1))));
+  const scroll = element('div', 'heatmap-scroll');
+  scroll.tabIndex = 0; scroll.setAttribute('aria-label', 'Daily signal map; scroll horizontally on small screens');
+  scroll.append(svg); panel.append(scroll);
+  return panel;
+}
+function training() {
+  const panel = element('article', 'training');
+  panel.append(element('h3', '', 'Training log'), element('p', '', workouts.length ? `${workouts.length} sessions · ${num(data.summary.workouts.value)} active minutes this month` : 'No recorded workouts this month'));
+  for (const w of workouts.slice(-5).reverse()) {
+    const row = element('div', 'session');
+    row.append(element('span', 'sessiondate', dateLabel(w.date)), element('span', '', w.activity.replace(/([a-z])([A-Z])/g, '$1 $2')), element('span', 'sessionduration', num(w.minutes, 1) + ' min')); panel.append(row);
+  }
+  panel.append(element('div', 'coverage', 'Latest five sessions · ' + changeText('workouts')));
+  return panel;
+}
+function notes() {
+  const details = element('details', 'notes');
+  details.append(element('summary', '', 'Sources, coverage & calculation notes'));
+  details.append(element('p', '', 'Sources: ' + data.sources.join(', ')));
+  const copy = [
+    'Missing days stay missing. Averages use recorded days only; workout minutes are a total. Comparisons cover the same elapsed days in the prior month, capped at its end. Coverage can differ.',
+    'Steps reconcile overlapping sources in the order Health, Apple Watch, iPhone, then other sources. Heart measurements at identical intervals are reconciled; other samples contribute to daily means. Use --source to restrict sources when generating the file; saved preferences are not read.',
+    'Sleep is grouped by each record’s end date, with in-bed time excluded. Workouts use valid active duration with elapsed time as a fallback. Exact matching intervals and activity types count once. Dates use export offsets.',
+    'HRV is mean daily SDNN, not a recovery score. Charts show observations, not diagnoses or evidence that a habit caused a change.',
+  ];
+  for (const text of copy) details.append(element('p', '', text));
+  for (const warning of data.warnings) details.append(element('p', 'warning', warning));
+  return details;
+}
+
+function renderTrends() {
+  const days = trendDays();
+  $('trend-period').textContent = dateLabel(days[0]) + ' – ' + dateLabel(days.at(-1)) + ' · ' + days.length + ' days';
+  for (const button of document.querySelectorAll('[data-range]')) button.setAttribute('aria-pressed', String(Number(button.dataset.range) === range));
+  const panels = chartKeys.map(key => chartPanel(key, days));
+  $('charts').replaceChildren(...panels);
+  if (activeTemplate === 'observatory') {
+    const grid = $('charts');
+    grid.insertBefore(heatmap(days), panels[2]);
+    const coverage = coveragePanel(); coverage.classList.add('observatory-coverage'); grid.insertBefore(coverage, panels[2]);
+    const workout = element('article', 'chart-card chart-workouts');
+    workout.append(element('h3', '', 'WORKOUT VOLUME'), element('p', 'chart-subtitle', descriptions.workouts), timeChart('workouts', days, 'bar'), dataTable('workouts', days)); grid.append(workout);
+  }
+}
+
+function render() {
+  document.body.dataset.template = activeTemplate;
+  document.documentElement.style.colorScheme = activeTemplate === 'observatory' ? 'dark' : 'light';
+  $('template').value = activeTemplate;
+  document.title = data.month + ' · ' + themes[activeTemplate].name + ' · healthai';
+  // Layout skeletons contain only fixed markup. Export strings are assigned via
+  // textContent in the renderers below, never inserted as markup.
+  $('dashboard').innerHTML = `
+    <div id="demo-slot"></div>
+    <header class="report-header"><div><div class="eyebrow" id="eyebrow"></div><h1 id="title"></h1><p id="subtitle"></p></div><div class="edition"><span id="month"></span><small id="period"></small></div></header>
+    <div id="intro"></div><div id="metrics" class="metrics"></div>
+    <div id="controls"></div><div id="charts" class="charts"></div>
+    <div id="supplement" class="supplement"></div><div id="method"></div>`;
+  demoBadge();
+  $('period').textContent = 'Through ' + dateLabel(data.through);
+  $('month').textContent = data.month;
+  $('controls').append(controls());
+  if (activeTemplate === 'report') {
+    $('eyebrow').textContent = 'HEALTHAI / MONTHLY REPORT';
+    $('title').textContent = 'Your health summary.';
+    $('subtitle').textContent = 'A month of movement, rest, and everything in between.';
+    $('intro').append(element('p', 'comparison', comparison()));
+    $('metrics').hidden = true;
+    $('supplement').append(calendarPanel(), coveragePanel());
+    const close = element('div', 'report-close');
+    close.append(element('div', 'eyebrow', 'THE MONTH, RECORDED'), element('h2', '', data.summary.steps.days + ' days of steps. ' + data.summary.sleep.days + ' days of sleep.'), element('p', '', workouts.length + ' workout sessions · ' + (data.summary.workouts.value === null ? 'No recorded workout time' : num(data.summary.workouts.value) + ' active minutes') + ' · Your next report adds the next chapter.'));
+    $('supplement').append(close);
+    const sessions = element('details', 'report-sessions');
+    sessions.append(element('summary', '', 'Recent workouts · ' + changeText('workouts')), training());
+    $('supplement').append(sessions);
+  } else if (activeTemplate === 'recap') {
+    $('eyebrow').textContent = 'HEALTHAI — A PERSONAL ALMANAC';
+    $('title').textContent = monthName.toUpperCase();
+    $('subtitle').textContent = year + ' / YOUR MONTH IN NUMBERS';
+    $('month').textContent = String(elapsedDays).padStart(2, '0');
+    $('period').textContent = 'calendar days · through ' + dateLabel(data.through);
+    const banner = element('div', 'recap-banner');
+    banner.append(element('span', 'eyebrow', 'THE BIG PICTURE'));
+    const total = monthEntries('steps').reduce((sum, [, v]) => sum + v, 0);
+    banner.append(element('strong', '', data.summary.steps.value === null ? 'Your month, recorded.' : num(total) + ' steps. One month.'), element('p', '', 'Across ' + data.summary.steps.days + ' recorded days · ' + workouts.length + ' workout sessions · through ' + dateLabel(data.through)));
+    $('intro').append(banner);
+    $('metrics').hidden = true;
+    const movement = element('div', 'recap-movement');
+    movement.append(stat('workouts'), calendarPanel());
+    $('supplement').append(movement, training());
+    $('method').append(element('p', 'comparison', comparison()));
+  } else if (activeTemplate === 'observatory') {
+    $('eyebrow').textContent = 'PERSONAL TELEMETRY / APPLE HEALTH';
+    $('title').textContent = 'Observatory';
+    $('subtitle').textContent = 'MONTHLY OVERVIEW · ' + data.month.toUpperCase();
+    $('month').textContent = '● SNAPSHOT';
+    $('period').textContent = 'Latest record ' + data.latest;
+    for (const key of Object.keys(data.metrics)) $('metrics').append(stat(key));
+    $('intro').append(element('p', 'comparison', comparison()));
+    $('supplement').append(training());
+  } else {
+    $('eyebrow').textContent = 'YOUR PERSONAL HEALTH JOURNAL';
+    $('title').textContent = 'Your health, in perspective.';
+    $('subtitle').textContent = 'A quieter view of your daily patterns. Small changes, seen over time.';
+    $('intro').append(element('p', 'comparison', comparison()));
+    for (const key of Object.keys(data.metrics)) $('metrics').append(stat(key));
+    $('supplement').append(training(), coveragePanel());
+  }
+  $('method').append(notes());
+  $('freshness').textContent = (data.demo ? 'Fictional demo' : 'Export snapshot') + ' · generated ' + data.generated_at.slice(0, 10) + '. Regenerate from a newer export to refresh.';
+  renderTrends();
+}
+$('template').addEventListener('change', event => {activeTemplate = event.target.value; render();});
+$('print').addEventListener('click', () => window.print());
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderTrends, 100);
+});
+render();
+</script>
+</body>
+</html>

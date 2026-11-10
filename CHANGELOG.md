@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.12.0 - 2026-11-10
+
+- Add `healthai dashboard` / `./run dashboard` for private, standalone HTML reports from Apple Health XML, ZIP, or export directories.
+- Introduce Monthly Report, Monthly Recap, and Observatory templates, plus Field Notes; switch layouts inside the same offline file.
+- Show steps, sleep, resting heart rate, HRV, and workouts with monthly comparisons, 7/30/90-day trends, source coverage, accessible data tables, and print/PDF support.
+- Reuse source reconciliation, normalize HRV and resting heart rate units, preserve missing-data gaps, and validate inputs and workout durations.
+- Include fictional demos, a downloadable template gallery, explicit month/source filters, and output protection against overwriting existing reports.
+- Add 23 dashboard regression tests; retain all existing export and analysis tests.
+
 ## v1.11.0 - 2026-11-02
 
 - Add `healthai convert` / `./run convert` for offline XML or ZIP conversion to raw CSV/JSON without AI setup, preferences, telemetry, or third-party imports.

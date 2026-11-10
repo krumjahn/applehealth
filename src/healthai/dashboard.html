@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="light dark">
+<title>Your month in health · healthai</title>
+<style>__DASHBOARD_CSS__</style>
+</head>
+<body>
+<header class="toolbar">
+  <a href="#dashboard" class="brand" aria-label="healthai dashboard"><span aria-hidden="true">∿</span> healthai</a>
+  <div class="tools"><label for="template">Template</label><select id="template">
+    <option value="report">01 — Monthly Report</option>
+    <option value="recap">02 — Monthly Recap</option>
+    <option value="observatory">03 — Observatory</option>
+    <option value="field-notes">04 — Field Notes</option>
+  </select><button id="print">Print / Save PDF ↗</button></div>
+</header>
+<main id="dashboard" tabindex="-1"></main>
+<footer class="file-footer"><span id="freshness"></span><span>Offline snapshot · No uploads<br>This file contains your health data. Share intentionally.</span></footer>
+<noscript>Enable JavaScript to display the data embedded in this file. No internet connection is needed.</noscript>
+<script id="health-data" type="application/json">__HEALTH_DATA__</script>
+<script>__DASHBOARD_JS__</script>
+</body>
+</html>

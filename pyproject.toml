@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthai"
-version = "1.11.0"
+version = "1.12.0"
 description = "Private Apple Health XML/ZIP export and optional AI analysis"
 readme = "README.md"
 license = "MIT"
@@ -40,3 +40,6 @@ py-modules = ["applehealth"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+healthai = ["dashboard.html", "dashboard.css", "dashboard.js"]

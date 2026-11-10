@@ -17,6 +17,8 @@ APPLE_DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 STEP_COUNT = "HKQuantityTypeIdentifierStepCount"
 DISTANCE_WALKING_RUNNING = "HKQuantityTypeIdentifierDistanceWalkingRunning"
 HEART_RATE = "HKQuantityTypeIdentifierHeartRate"
+RESTING_HEART_RATE = "HKQuantityTypeIdentifierRestingHeartRate"
+HEART_RATE_VARIABILITY = "HKQuantityTypeIdentifierHeartRateVariabilitySDNN"
 BODY_MASS = "HKQuantityTypeIdentifierBodyMass"
 SLEEP_ANALYSIS = "HKCategoryTypeIdentifierSleepAnalysis"
 
@@ -24,6 +26,8 @@ TARGET_UNITS = {
     STEP_COUNT: "count",
     DISTANCE_WALKING_RUNNING: "km",
     HEART_RATE: "count/min",
+    RESTING_HEART_RATE: "count/min",
+    HEART_RATE_VARIABILITY: "ms",
     BODY_MASS: "kg",
 }
 
@@ -97,6 +101,12 @@ def convert_unit(value: float, unit: str, target_unit: str) -> float:
         }
         if source in factors:
             return float(value) * factors[source]
+
+    if target == "ms":
+        if source in {"millisecond", "milliseconds"}:
+            return float(value)
+        if source in {"s", "sec", "second", "seconds"}:
+            return float(value) * 1000
 
     if target == "kg":
         factors = {
