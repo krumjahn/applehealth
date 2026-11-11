@@ -55,13 +55,55 @@ function monthEntries(key) {
 const workouts = data.workouts.filter(w => w.date >= data.month_start && w.date <= data.through);
 
 function changeText(key) {
-  const change = data.summary[key].change;
-  if (change === null) return 'No prior comparison';
-  return (change > 0 ? '↑ ' : change < 0 ? '↓ ' : '') + num(Math.abs(change), 1) + '% vs prior period';
+  const result = dashboardCoverage.comparison(data, key);
+  const unavailable = {
+    'no-current': 'No measurements this month',
+    'no-prior': 'No prior-month measurements',
+    sparse: 'Limited coverage · change withheld',
+    'zero-baseline': 'Prior value is zero · % unavailable',
+  };
+  if (result.reason !== 'available') return unavailable[result.reason];
+  const sign = value => value > 0 ? '+' : value < 0 ? '−' : '';
+  return sign(result.change) + num(Math.abs(result.change), 1) + '% vs prior month (' +
+    sign(result.difference) + num(Math.abs(result.difference), data.metrics[key].decimals) + ' ' + data.metrics[key].unit + ')';
 }
-function coverageText(key) {
-  const s = data.summary[key];
-  return s.days + ' recorded days · ' + s.previous_days + ' prior';
+function periodLabel(period) {
+  return dateLabel(period.first) + '–' + dateLabel(period.last);
+}
+function coverageLine(key, period) {
+  const count = period.recorded + '/' + period.total;
+  if (key === 'workouts') return count + ' days with workouts · ' + period.missing + ' without recorded workouts';
+  return count + ' days recorded (' + num(period.fraction * 100) + '%) · ' + period.missing + ' missing';
+}
+function monthlyEvidence(key) {
+  const periods = dashboardCoverage.monthly(data, key);
+  const evidence = element('div', 'monthly-evidence');
+  evidence.append(element('div', 'coverage-current', periodLabel(periods.current) + ': ' + coverageLine(key, periods.current)),
+    element('div', 'coverage-prior', periodLabel(periods.previous) + ': ' + coverageLine(key, periods.previous)));
+  if (key === 'workouts') {
+    evidence.append(element('div', 'coverage-note', 'Recorded totals; export completeness unknown.'));
+  } else {
+    const sparse = dashboardCoverage.comparison(data, key).reason === 'sparse';
+    evidence.append(element('div', sparse ? 'coverage-caution' : 'coverage-note', sparse ?
+      'Change needs ≥7 recorded days and ≥80% coverage in both periods.' :
+      'Average of recorded days; a recorded day may be incomplete.'));
+  }
+  return evidence;
+}
+function chartCoverage(key, days) {
+  const period = dashboardCoverage.period(data.series[key], days[0], days.at(-1));
+  const node = element('div', 'chart-coverage');
+  node.append(element('strong', '', 'Chart · ' + periodLabel(period)), element('span', '', coverageLine(key, period)));
+  return node;
+}
+function monthlyStats(key) {
+  const meta = data.metrics[key], summary = data.summary[key];
+  const node = element('div', 'chart-monthly-stats');
+  const value = element('div', 'chart-monthly-value');
+  value.append(element('strong', '', num(summary.value, meta.decimals)),
+    element('span', '', (key === 'workouts' ? ' recorded total · ' : ' recorded-day average · ') + meta.unit));
+  node.append(value, element('div', 'delta', changeText(key)), monthlyEvidence(key));
+  return node;
 }
 function unitLabel(key) {
   return data.metrics[key].unit + (key === 'workouts' ? ' total' : key === 'steps' || key === 'sleep' ? ' / day' : ' daily avg');
@@ -75,7 +117,7 @@ function stat(key, cls = 'metric') {
   node.append(element('div', 'metric-label', meta.label));
   const value = element('div', 'value-line');
   value.append(element('strong', 'value', num(summary.value, meta.decimals)), element('span', 'unit', unitLabel(key)));
-  node.append(value, element('div', 'delta', changeText(key)), element('div', 'coverage', coverageText(key)));
+  node.append(value, element('div', 'delta', changeText(key)), monthlyEvidence(key));
   return node;
 }
 function demoBadge() {
@@ -107,7 +149,7 @@ function dataTable(key, days) {
   const meta = data.metrics[key], points = data.series[key];
   const recorded = days.filter(d => points[d] !== undefined).length;
   const details = element('details', 'chartdetails');
-  details.append(element('summary', '', recorded + ' of ' + days.length + ' days recorded · Daily values'));
+  details.append(element('summary', '', recorded + ' of ' + days.length + (key === 'workouts' ? ' days with workouts' : ' days recorded') + ' · Daily values'));
   const wrap = element('div', 'tablewrap'), table = element('table');
   table.append(element('caption', '', meta.label + ' · ' + meta.unit));
   const thead = element('thead'), row = element('tr');
@@ -125,7 +167,8 @@ function dataTable(key, days) {
 
 function chartWidth(key) {
   const narrow = window.matchMedia('(max-width: 720px)').matches;
-  let fraction = narrow && activeTemplate !== 'recap' ? 1 : .5;
+  const recapSingleColumn = window.matchMedia('(max-width: 540px)').matches;
+  let fraction = narrow && (activeTemplate !== 'recap' || recapSingleColumn) ? 1 : .5;
   if (activeTemplate === 'observatory' && !narrow) {
     fraction = key === 'steps' ? 2 / 3 : key === 'sleep' ? 1 / 3 : key === 'workouts' ? 1 : .5;
   }
@@ -219,14 +262,8 @@ function chartPanel(key, days) {
   if (activeTemplate === 'recap') card.prepend(stat(key, 'tile-stat'));
   const mode = key === 'steps' ? (activeTemplate === 'observatory' ? 'area' : 'bar') : key === 'sleep' ? 'bar' : key === 'hrv' && activeTemplate === 'report' ? 'dot' : 'line';
   card.append(activeTemplate === 'report' && key === 'sleep' ? sleepDistribution(days) : timeChart(key, days, mode, activeTemplate === 'recap'));
-  if (activeTemplate === 'report') {
-    const s = data.summary[key], summary = element('div', 'panel-stats');
-    const a = element('div'), b = element('div'), c = element('div');
-    a.append(element('strong', '', num(s.value, meta.decimals)), element('span', '', 'Month avg · ' + meta.unit));
-    b.append(element('strong', '', s.change === null ? '—' : (s.change > 0 ? '+' : '') + num(s.change, 1) + '%'), element('span', '', 'vs prior period'));
-    c.append(element('strong', '', String(s.days)), element('span', '', 'Recorded days'));
-    summary.append(a, b, c); card.append(summary);
-  }
+  card.append(chartCoverage(key, days));
+  if (activeTemplate !== 'recap') card.append(monthlyStats(key));
   card.append(dataTable(key, days));
   return card;
 }
@@ -259,12 +296,16 @@ function coveragePanel() {
 function heatmap(days) {
   const panel = element('article', 'heatmap-panel');
   panel.append(element('h3', '', 'DAILY SIGNAL MAP'), element('p', '', 'Each row uses its own recorded range. Outlines indicate missing data.'));
-  const svg = svgElement('svg', {viewBox: '0 0 850 176', role: 'img', 'aria-label': 'Daily metric heatmap. Each row is independently scaled. Exact values in each chart’s table.'});
+  const coverageLabels = chartKeys.map(key => data.metrics[key].label + ': ' +
+    coverageLine(key, dashboardCoverage.period(data.series[key], days[0], days.at(-1)))).join('. ');
+  const svg = svgElement('svg', {viewBox: '0 0 1000 176', role: 'img', 'aria-label': 'Daily metric heatmap. Each row is independently scaled. ' + coverageLabels + '. Exact values in each chart’s table.'});
   const width = 708 / days.length;
   chartKeys.forEach((key, row) => {
     const values = days.map(d => data.series[key][d]), known = values.filter(v => v !== undefined);
     const low = Math.min(...known), high = Math.max(...known);
     svg.append(svgElement('text', {x: 0, y: 28 + row * 33, class: 'axis heat-label'}, {steps: 'Steps', sleep: 'Sleep', resting_hr: 'Resting HR', hrv: 'HRV'}[key]));
+    svg.append(svgElement('text', {x: 845, y: 19 + row * 33, class: 'axis heat-coverage'}, known.length + '/' + days.length + ' recorded'),
+      svgElement('text', {x: 845, y: 33 + row * 33, class: 'axis heat-coverage'}, (days.length - known.length) + ' missing'));
     values.forEach((v, i) => {
       const missing = v === undefined;
       const rect = svgElement('rect', {x: 118 + i * width, y: 9 + row * 33, width: Math.max(1, width - 2), height: 24, rx: 1,
@@ -293,7 +334,9 @@ function notes() {
   details.append(element('summary', '', 'Sources, coverage & calculation notes'));
   details.append(element('p', '', 'Sources: ' + data.sources.join(', ')));
   const copy = [
-    'Missing days stay missing. Averages use recorded days only; workout minutes are a total. Comparisons cover the same elapsed days in the prior month, capped at its end. Coverage can differ.',
+    'Missing days stay missing. Averages use recorded days only; workout minutes are a total. Comparisons cover the same elapsed days in the prior month, capped at its end. Monthly summaries stay fixed when the chart range changes.',
+    'Daily-metric changes are displayed only when each comparison period has at least 7 recorded days and 80% recorded-day coverage. This is a display rule, not statistical confidence or evidence of a trend. Coverage counts days with at least one usable value, not raw samples or device wear time; a recorded day may be incomplete.',
+    'Workout comparisons use recorded minute totals. Days without recorded workouts do not prove missing data or rest; export completeness cannot be inferred from workout-day counts.',
     'Steps reconcile overlapping sources in the order Health, Apple Watch, iPhone, then other sources. Heart measurements at identical intervals are reconciled; other samples contribute to daily means. Use --source to restrict sources when generating the file; saved preferences are not read.',
     'Sleep is grouped by each record’s end date, with in-bed time excluded. Workouts use valid active duration with elapsed time as a fallback. Exact matching intervals and activity types count once. Dates use export offsets.',
     'HRV is mean daily SDNN, not a recovery score. Charts show observations, not diagnoses or evidence that a habit caused a change.',
@@ -314,7 +357,7 @@ function renderTrends() {
     grid.insertBefore(heatmap(days), panels[2]);
     const coverage = coveragePanel(); coverage.classList.add('observatory-coverage'); grid.insertBefore(coverage, panels[2]);
     const workout = element('article', 'chart-card chart-workouts');
-    workout.append(element('h3', '', 'WORKOUT VOLUME'), element('p', 'chart-subtitle', descriptions.workouts), timeChart('workouts', days, 'bar'), dataTable('workouts', days)); grid.append(workout);
+    workout.append(element('h3', '', 'WORKOUT VOLUME'), element('p', 'chart-subtitle', descriptions.workouts), timeChart('workouts', days, 'bar'), chartCoverage('workouts', days), monthlyStats('workouts'), dataTable('workouts', days)); grid.append(workout);
   }
 }
 

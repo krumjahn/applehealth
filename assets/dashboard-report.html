@@ -71,9 +71,18 @@ table { border-collapse: collapse; width: 100%; text-align: left; font-size: 11p
 caption { text-align: left; padding: 4px; }
 th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
 th { font-weight: 500; }
-.panel-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding-top: 12px; margin-top: 9px; border-top: 1px solid var(--grid); }
-.panel-stats strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
-.panel-stats span { display: block; color: var(--muted); font-size: 8px; margin-top: 5px; }
+.chart-coverage { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3px 12px; margin-top: 9px; font-size: 10px; line-height: 1.6; }
+.chart-coverage strong { font-weight: 550; }
+.chart-coverage span { color: var(--muted); }
+.chart-monthly-stats { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.chart-monthly-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+.chart-monthly-value strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.chart-monthly-value span { font-size: 10px; color: var(--muted); }
+.monthly-evidence { font-size: 10px; line-height: 1.6; margin-top: 6px; overflow-wrap: anywhere; }
+.coverage-current { font-weight: 550; }
+.coverage-prior, .coverage-note { color: var(--muted); }
+.coverage-caution { border-left: 2px solid var(--accent, var(--muted)); padding-left: 7px; margin-top: 5px; }
+.coverage-note { margin-top: 4px; font-size: 9px; }
 .supplement { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 .calendar-panel, .coverage-panel, .training, .heatmap-panel { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 18px; }
 .calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -191,6 +200,7 @@ body[data-template="observatory"] .chartdetails { font-size: 8px; }
 .heatmap-panel svg { display: block; width: 100%; height: 155px; margin-top: 10px; }
 .heatmap-scroll { overflow-x: auto; }
 .heat-label { font-size: 12px; }
+.heat-coverage { font-size: 11px; }
 .observatory-coverage { grid-column: span 4; border-radius: 3px; padding: 17px 15px; }
 .observatory-coverage .coverage-row { grid-template-columns: 90px 1fr 30px; gap: 6px; margin: 18px 0; font-size: 8px; }
 body[data-template="observatory"] .chart-workouts { grid-column: 1/-1; }
@@ -208,6 +218,7 @@ body[data-template="field-notes"] .report-header { margin-bottom: 30px; }
 body[data-template="field-notes"] .edition span { font: 25px Georgia, serif; }
 body[data-template="field-notes"] .metric:first-child { background: #173f36; color: #e0efb5; }
 body[data-template="field-notes"] .metric:first-child .metric-label, body[data-template="field-notes"] .metric:first-child .unit, body[data-template="field-notes"] .metric:first-child .coverage { color: #b7c8ba; }
+body[data-template="field-notes"] .metric:first-child .coverage-prior, body[data-template="field-notes"] .metric:first-child .coverage-note { color: #b7c8ba; }
 body[data-template="field-notes"] .chart { height: 180px; }
 body[data-template="field-notes"] .file-footer { max-width: 1280px; }
 
@@ -261,9 +272,13 @@ body[data-template="field-notes"] .file-footer { max-width: 1280px; }
   body[data-template="observatory"] .charts { grid-template-columns: 1fr; }
   body[data-template="observatory"] .chart-card, .heatmap-panel, .observatory-coverage { grid-column: 1; }
   body[data-template="observatory"] .training .session { display: grid; width: 100%; padding-right: 0; }
-  .heatmap-panel svg { height: 150px; min-width: 640px; }
+  .heatmap-panel svg { height: 150px; min-width: 780px; }
   body[data-template="field-notes"] h1 { font-size: 38px; }
   body[data-template="field-notes"] .edition span { font-size: 17px; }
+}
+@media (max-width: 540px) {
+  body[data-template="recap"] .charts { grid-template-columns: 1fr; }
+  body[data-template="recap"] .delta { font-size: 10px; }
 }
 @media (max-width: 400px) {
   .brand { font-size: 18px; }
@@ -311,6 +326,37 @@ body[data-template="field-notes"] .file-footer { max-width: 1280px; }
 <noscript>Enable JavaScript to display the data embedded in this file. No internet connection is needed.</noscript>
 <script id="health-data" type="application/json">{"schema_version": 1, "demo": true, "month": "October 2026", "month_start": "2026-10-01", "through": "2026-10-31", "latest": "2026-10-31", "window_start": "2026-08-03", "previous_start": "2026-09-01", "previous_end": "2026-09-30", "generated_at": "2026-11-09T10:58:09+00:00", "metrics": {"steps": {"label": "Daily steps", "unit": "steps", "decimals": 0}, "sleep": {"label": "Time asleep", "unit": "hours", "decimals": 1}, "resting_hr": {"label": "Resting heart rate", "unit": "bpm", "decimals": 1}, "hrv": {"label": "Heart rate variability", "unit": "ms", "decimals": 1}, "workouts": {"label": "Workout time", "unit": "min", "decimals": 0}}, "series": {"steps": {"2026-08-03": 8219, "2026-08-04": 7371, "2026-08-05": 9397, "2026-08-06": 7520, "2026-08-07": 8021, "2026-08-08": 4889, "2026-08-09": 5162, "2026-08-10": 3954, "2026-08-11": 5357, "2026-08-12": 7185, "2026-08-13": 8460, "2026-08-14": 8608, "2026-08-15": 7807, "2026-08-16": 7786, "2026-08-17": 7629, "2026-08-18": 4421, "2026-08-19": 6361, "2026-08-20": 5239, "2026-08-21": 5941, "2026-08-22": 8294, "2026-08-23": 8265, "2026-08-24": 8452, "2026-08-25": 7134, "2026-08-26": 6818, "2026-08-27": 6523, "2026-08-28": 5468, "2026-08-29": 4376, "2026-08-30": 8330, "2026-08-31": 7045, "2026-09-01": 8415, "2026-09-02": 9973, "2026-09-03": 8411, "2026-09-04": 7218, "2026-09-05": 5206, "2026-09-06": 4545, "2026-09-07": 6348, "2026-09-08": 6266, "2026-09-09": 9218, "2026-09-10": 10677, "2026-09-11": 10088, "2026-09-12": 8287, "2026-09-13": 7141, "2026-09-14": 6603, "2026-09-15": 3857, "2026-09-16": 6594, "2026-09-17": 6771, "2026-09-18": 7479, "2026-09-19": 10678, "2026-09-20": 8966, "2026-09-21": 6918, "2026-09-22": 6594, "2026-09-23": 5943, "2026-09-24": 3959, "2026-09-25": 6404, "2026-09-26": 6485, "2026-09-27": 8275, "2026-09-28": 9970, "2026-09-29": 8511, "2026-09-30": 6349, "2026-10-01": 7944, "2026-10-02": 5536, "2026-10-03": 6339, "2026-10-04": 5707, "2026-10-05": 9087, "2026-10-06": 9209, "2026-10-07": 10669, "2026-10-08": 10919, "2026-10-09": 8039, "2026-10-10": 6018, "2026-10-11": 7642, "2026-10-12": 6863, "2026-10-13": 6124, "2026-10-14": 7617, "2026-10-15": 11071, "2026-10-16": 10799, "2026-10-17": 10952, "2026-10-18": 9740, "2026-10-19": 8596, "2026-10-20": 6982, "2026-10-21": 6971, "2026-10-22": 7069, "2026-10-23": 9309, "2026-10-24": 8912, "2026-10-25": 10487, "2026-10-26": 10018, "2026-10-27": 7749, "2026-10-28": 7602, "2026-10-29": 5667, "2026-10-30": 5860, "2026-10-31": 8262}, "sleep": {"2026-08-03": 6.48, "2026-08-04": 7.38, "2026-08-05": 6.35, "2026-08-06": 7.2, "2026-08-07": 6.65, "2026-08-08": 7.51, "2026-08-09": 6.74, "2026-08-10": 6.45, "2026-08-11": 7.59, "2026-08-13": 7.22, "2026-08-14": 7.54, "2026-08-15": 6.91, "2026-08-16": 6.87, "2026-08-17": 7.34, "2026-08-18": 7.04, "2026-08-19": 7.19, "2026-08-20": 7.61, "2026-08-21": 6.64, "2026-08-22": 6.64, "2026-08-23": 6.72, "2026-08-24": 7.5, "2026-08-25": 7.9, "2026-08-26": 6.45, "2026-08-27": 6.98, "2026-08-28": 7.15, "2026-08-29": 7.39, "2026-08-30": 6.84, "2026-08-31": 7.83, "2026-09-01": 7.11, "2026-09-02": 7.11, "2026-09-03": 7.83, "2026-09-05": 7.71, "2026-09-06": 7.7, "2026-09-07": 7.61, "2026-09-08": 7.36, "2026-09-09": 7.7, "2026-09-10": 7.4, "2026-09-11": 7.34, "2026-09-12": 7.02, "2026-09-13": 7.19, "2026-09-14": 7.31, "2026-09-15": 7.12, "2026-09-16": 6.51, "2026-09-17": 7.56, "2026-09-18": 7.35, "2026-09-19": 6.39, "2026-09-20": 7.47, "2026-09-21": 6.6, "2026-09-22": 6.7, "2026-09-23": 6.46, "2026-09-24": 7.78, "2026-09-25": 7.07, "2026-09-26": 6.91, "2026-09-28": 7.36, "2026-09-29": 6.65, "2026-09-30": 7.5, "2026-10-01": 6.9, "2026-10-02": 6.76, "2026-10-03": 6.84, "2026-10-04": 7.64, "2026-10-05": 7.16, "2026-10-06": 7.07, "2026-10-07": 7.16, "2026-10-08": 8.25, "2026-10-09": 7.46, "2026-10-10": 8.06, "2026-10-11": 7.13, "2026-10-12": 6.66, "2026-10-13": 7.07, "2026-10-14": 7.09, "2026-10-15": 7.66, "2026-10-16": 7.05, "2026-10-17": 7.33, "2026-10-18": 8.22, "2026-10-19": 7.33, "2026-10-21": 6.89, "2026-10-22": 6.99, "2026-10-23": 8.06, "2026-10-24": 8.13, "2026-10-25": 6.69, "2026-10-26": 7.93, "2026-10-27": 7.91, "2026-10-28": 7.01, "2026-10-29": 7.01, "2026-10-30": 8.03, "2026-10-31": 7.47}, "resting_hr": {"2026-08-03": 61.4, "2026-08-04": 62.4, "2026-08-05": 57.6, "2026-08-06": 61.3, "2026-08-07": 60.5, "2026-08-08": 58.0, "2026-08-09": 58.3, "2026-08-10": 57.6, "2026-08-11": 61.4, "2026-08-12": 57.5, "2026-08-13": 61.2, "2026-08-14": 62.9, "2026-08-15": 59.7, "2026-08-16": 61.0, "2026-08-17": 60.7, "2026-08-18": 58.6, "2026-08-19": 61.1, "2026-08-20": 61.8, "2026-08-21": 62.7, "2026-08-22": 60.0, "2026-08-23": 58.5, "2026-08-24": 59.6, "2026-08-25": 57.8, "2026-08-26": 57.3, "2026-08-27": 57.4, "2026-08-28": 62.8, "2026-08-29": 57.7, "2026-08-30": 58.8, "2026-08-31": 62.3, "2026-09-01": 57.6, "2026-09-02": 58.2, "2026-09-03": 62.5, "2026-09-04": 58.9, "2026-09-05": 62.0, "2026-09-06": 62.7, "2026-09-07": 62.9, "2026-09-08": 62.7, "2026-09-09": 59.5, "2026-09-10": 61.3, "2026-09-11": 59.6, "2026-09-12": 58.5, "2026-09-13": 60.5, "2026-09-14": 58.4, "2026-09-15": 58.7, "2026-09-16": 62.6, "2026-09-17": 61.8, "2026-09-18": 59.1, "2026-09-19": 60.9, "2026-09-20": 61.8, "2026-09-21": 59.7, "2026-09-22": 62.5, "2026-09-23": 60.9, "2026-09-24": 62.1, "2026-09-25": 62.2, "2026-09-26": 62.9, "2026-09-27": 59.5, "2026-09-28": 59.9, "2026-09-29": 57.4, "2026-09-30": 57.3, "2026-10-01": 60.8, "2026-10-02": 55.4, "2026-10-03": 60.3, "2026-10-04": 57.5, "2026-10-05": 56.6, "2026-10-06": 55.8, "2026-10-07": 59.5, "2026-10-08": 61.0, "2026-10-09": 55.8, "2026-10-10": 57.2, "2026-10-11": 60.9, "2026-10-12": 59.9, "2026-10-13": 60.3, "2026-10-14": 58.6, "2026-10-15": 56.6, "2026-10-16": 60.4, "2026-10-17": 56.7, "2026-10-18": 56.0, "2026-10-19": 55.1, "2026-10-20": 55.2, "2026-10-21": 55.8, "2026-10-22": 56.5, "2026-10-23": 57.4, "2026-10-24": 56.4, "2026-10-25": 59.4, "2026-10-26": 60.2, "2026-10-27": 55.6, "2026-10-28": 59.9, "2026-10-29": 59.0, "2026-10-30": 60.8, "2026-10-31": 59.1}, "hrv": {"2026-08-03": 38.4, "2026-08-04": 35.6, "2026-08-05": 38.2, "2026-08-06": 46.6, "2026-08-07": 48.6, "2026-08-09": 47.7, "2026-08-10": 49.3, "2026-08-11": 43.7, "2026-08-12": 39.3, "2026-08-13": 34.8, "2026-08-14": 49.4, "2026-08-15": 49.0, "2026-08-16": 46.6, "2026-08-17": 37.1, "2026-08-18": 50.7, "2026-08-19": 49.2, "2026-08-20": 41.2, "2026-08-21": 49.8, "2026-08-22": 49.9, "2026-08-23": 44.1, "2026-08-24": 44.5, "2026-08-26": 36.0, "2026-08-27": 40.9, "2026-08-28": 49.5, "2026-08-29": 49.9, "2026-08-30": 36.8, "2026-08-31": 38.7, "2026-09-01": 45.3, "2026-09-02": 40.7, "2026-09-03": 50.5, "2026-09-04": 34.4, "2026-09-05": 39.5, "2026-09-06": 35.5, "2026-09-07": 43.6, "2026-09-08": 37.0, "2026-09-09": 37.8, "2026-09-10": 41.2, "2026-09-12": 35.2, "2026-09-13": 34.1, "2026-09-14": 50.3, "2026-09-15": 42.7, "2026-09-16": 44.3, "2026-09-17": 37.4, "2026-09-18": 41.4, "2026-09-19": 45.6, "2026-09-20": 36.0, "2026-09-21": 41.6, "2026-09-22": 42.0, "2026-09-23": 43.7, "2026-09-24": 37.0, "2026-09-25": 50.2, "2026-09-26": 38.8, "2026-09-27": 51.2, "2026-09-29": 47.2, "2026-09-30": 44.5, "2026-10-01": 39.4, "2026-10-02": 53.5, "2026-10-03": 42.4, "2026-10-04": 48.5, "2026-10-05": 50.1, "2026-10-06": 49.6, "2026-10-07": 39.3, "2026-10-08": 39.3, "2026-10-09": 44.3, "2026-10-10": 40.8, "2026-10-11": 52.5, "2026-10-12": 43.4, "2026-10-13": 51.4, "2026-10-14": 50.9, "2026-10-16": 38.9, "2026-10-17": 38.1, "2026-10-18": 46.0, "2026-10-19": 39.4, "2026-10-20": 44.6, "2026-10-21": 43.5, "2026-10-22": 39.9, "2026-10-23": 49.2, "2026-10-24": 40.9, "2026-10-25": 44.0, "2026-10-26": 52.6, "2026-10-27": 53.7, "2026-10-28": 46.3, "2026-10-29": 45.2, "2026-10-30": 43.0, "2026-10-31": 53.2}, "workouts": {"2026-08-03": 35, "2026-08-05": 60, "2026-08-08": 50, "2026-08-10": 60, "2026-08-12": 60, "2026-08-15": 35, "2026-08-17": 35, "2026-08-19": 30, "2026-08-22": 50, "2026-08-24": 45, "2026-08-26": 35, "2026-08-29": 45, "2026-08-31": 60, "2026-09-02": 35, "2026-09-05": 30, "2026-09-07": 35, "2026-09-09": 60, "2026-09-12": 30, "2026-09-14": 45, "2026-09-16": 50, "2026-09-19": 30, "2026-09-21": 45, "2026-09-23": 30, "2026-09-26": 50, "2026-09-28": 35, "2026-09-30": 60, "2026-10-03": 60, "2026-10-05": 45, "2026-10-07": 50, "2026-10-10": 60, "2026-10-12": 30, "2026-10-14": 35, "2026-10-17": 35, "2026-10-19": 35, "2026-10-21": 30, "2026-10-24": 35, "2026-10-26": 45, "2026-10-28": 45, "2026-10-31": 45}}, "summary": {"steps": {"value": 8185.774193548387, "previous": 7404.966666666666, "days": 31, "previous_days": 30, "change": 10.544375984790223}, "sleep": {"value": 7.365333333333334, "previous": 7.207857142857143, "days": 30, "previous_days": 28, "change": 2.1847851220559678}, "resting_hr": {"value": 58.05483870967742, "previous": 60.486666666666665, "days": 31, "previous_days": 30, "change": -4.020436388718029}, "hrv": {"value": 45.46333333333334, "previous": 41.739285714285714, "days": 30, "previous_days": 28, "change": 8.92216422805968}, "workouts": {"value": 550, "previous": 535, "days": 13, "previous_days": 13, "change": 2.803738317757009}}, "workouts": [{"date": "2026-08-03", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-05", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-08", "activity": "Running", "minutes": 50}, {"date": "2026-08-10", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-12", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-08-15", "activity": "Running", "minutes": 35}, {"date": "2026-08-17", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-19", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-08-22", "activity": "Running", "minutes": 50}, {"date": "2026-08-24", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-08-26", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-08-29", "activity": "Running", "minutes": 45}, {"date": "2026-08-31", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-09-02", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-05", "activity": "Running", "minutes": 30}, {"date": "2026-09-07", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-09", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-09-12", "activity": "Running", "minutes": 30}, {"date": "2026-09-14", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-09-16", "activity": "TraditionalStrengthTraining", "minutes": 50}, {"date": "2026-09-19", "activity": "Running", "minutes": 30}, {"date": "2026-09-21", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-09-23", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-09-26", "activity": "Running", "minutes": 50}, {"date": "2026-09-28", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-09-30", "activity": "TraditionalStrengthTraining", "minutes": 60}, {"date": "2026-10-03", "activity": "Running", "minutes": 60}, {"date": "2026-10-05", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-07", "activity": "TraditionalStrengthTraining", "minutes": 50}, {"date": "2026-10-10", "activity": "Running", "minutes": 60}, {"date": "2026-10-12", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-10-14", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-10-17", "activity": "Running", "minutes": 35}, {"date": "2026-10-19", "activity": "TraditionalStrengthTraining", "minutes": 35}, {"date": "2026-10-21", "activity": "TraditionalStrengthTraining", "minutes": 30}, {"date": "2026-10-24", "activity": "Running", "minutes": 35}, {"date": "2026-10-26", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-28", "activity": "TraditionalStrengthTraining", "minutes": 45}, {"date": "2026-10-31", "activity": "Running", "minutes": 45}], "sources": ["Demo Apple Watch", "Demo iPhone"], "warnings": [], "template": "report"}</script>
 <script>'use strict';
+
+// Display eligibility, not a measure of statistical confidence or device wear.
+const dashboardCoverage = {
+  period(points, first, last) {
+    const total = Math.round((new Date(last + 'T12:00:00Z') - new Date(first + 'T12:00:00Z')) / 86400000) + 1;
+    const recorded = Object.keys(points).filter(day => day >= first && day <= last).length;
+    return {first, last, total, recorded, missing: total - recorded, fraction: recorded / total};
+  },
+  monthly(data, key) {
+    return {
+      current: this.period(data.series[key], data.month_start, data.through),
+      previous: this.period(data.series[key], data.previous_start, data.previous_end),
+    };
+  },
+  comparison(data, key) {
+    const {current, previous} = this.monthly(data, key);
+    const summary = data.summary[key];
+    if (summary.value === null || !current.recorded) return {reason: 'no-current'};
+    if (summary.previous === null || !previous.recorded) return {reason: 'no-prior'};
+    // Workout days are events, not proof of export coverage. Rest days must not
+    // be classified as missing health measurements or fail the daily-data rule.
+    if (key !== 'workouts' && [current, previous].some(p => p.recorded < 7 || p.fraction < .8)) {
+      return {reason: 'sparse'};
+    }
+    if (summary.previous === 0) return {reason: 'zero-baseline'};
+    return {reason: 'available', change: (summary.value - summary.previous) / summary.previous * 100,
+      difference: summary.value - summary.previous};
+  },
+};
+
+'use strict';
 
 const data = JSON.parse(document.getElementById('health-data').textContent);
 const $ = id => document.getElementById(id);
@@ -367,13 +413,55 @@ function monthEntries(key) {
 const workouts = data.workouts.filter(w => w.date >= data.month_start && w.date <= data.through);
 
 function changeText(key) {
-  const change = data.summary[key].change;
-  if (change === null) return 'No prior comparison';
-  return (change > 0 ? '↑ ' : change < 0 ? '↓ ' : '') + num(Math.abs(change), 1) + '% vs prior period';
+  const result = dashboardCoverage.comparison(data, key);
+  const unavailable = {
+    'no-current': 'No measurements this month',
+    'no-prior': 'No prior-month measurements',
+    sparse: 'Limited coverage · change withheld',
+    'zero-baseline': 'Prior value is zero · % unavailable',
+  };
+  if (result.reason !== 'available') return unavailable[result.reason];
+  const sign = value => value > 0 ? '+' : value < 0 ? '−' : '';
+  return sign(result.change) + num(Math.abs(result.change), 1) + '% vs prior month (' +
+    sign(result.difference) + num(Math.abs(result.difference), data.metrics[key].decimals) + ' ' + data.metrics[key].unit + ')';
 }
-function coverageText(key) {
-  const s = data.summary[key];
-  return s.days + ' recorded days · ' + s.previous_days + ' prior';
+function periodLabel(period) {
+  return dateLabel(period.first) + '–' + dateLabel(period.last);
+}
+function coverageLine(key, period) {
+  const count = period.recorded + '/' + period.total;
+  if (key === 'workouts') return count + ' days with workouts · ' + period.missing + ' without recorded workouts';
+  return count + ' days recorded (' + num(period.fraction * 100) + '%) · ' + period.missing + ' missing';
+}
+function monthlyEvidence(key) {
+  const periods = dashboardCoverage.monthly(data, key);
+  const evidence = element('div', 'monthly-evidence');
+  evidence.append(element('div', 'coverage-current', periodLabel(periods.current) + ': ' + coverageLine(key, periods.current)),
+    element('div', 'coverage-prior', periodLabel(periods.previous) + ': ' + coverageLine(key, periods.previous)));
+  if (key === 'workouts') {
+    evidence.append(element('div', 'coverage-note', 'Recorded totals; export completeness unknown.'));
+  } else {
+    const sparse = dashboardCoverage.comparison(data, key).reason === 'sparse';
+    evidence.append(element('div', sparse ? 'coverage-caution' : 'coverage-note', sparse ?
+      'Change needs ≥7 recorded days and ≥80% coverage in both periods.' :
+      'Average of recorded days; a recorded day may be incomplete.'));
+  }
+  return evidence;
+}
+function chartCoverage(key, days) {
+  const period = dashboardCoverage.period(data.series[key], days[0], days.at(-1));
+  const node = element('div', 'chart-coverage');
+  node.append(element('strong', '', 'Chart · ' + periodLabel(period)), element('span', '', coverageLine(key, period)));
+  return node;
+}
+function monthlyStats(key) {
+  const meta = data.metrics[key], summary = data.summary[key];
+  const node = element('div', 'chart-monthly-stats');
+  const value = element('div', 'chart-monthly-value');
+  value.append(element('strong', '', num(summary.value, meta.decimals)),
+    element('span', '', (key === 'workouts' ? ' recorded total · ' : ' recorded-day average · ') + meta.unit));
+  node.append(value, element('div', 'delta', changeText(key)), monthlyEvidence(key));
+  return node;
 }
 function unitLabel(key) {
   return data.metrics[key].unit + (key === 'workouts' ? ' total' : key === 'steps' || key === 'sleep' ? ' / day' : ' daily avg');
@@ -387,7 +475,7 @@ function stat(key, cls = 'metric') {
   node.append(element('div', 'metric-label', meta.label));
   const value = element('div', 'value-line');
   value.append(element('strong', 'value', num(summary.value, meta.decimals)), element('span', 'unit', unitLabel(key)));
-  node.append(value, element('div', 'delta', changeText(key)), element('div', 'coverage', coverageText(key)));
+  node.append(value, element('div', 'delta', changeText(key)), monthlyEvidence(key));
   return node;
 }
 function demoBadge() {
@@ -419,7 +507,7 @@ function dataTable(key, days) {
   const meta = data.metrics[key], points = data.series[key];
   const recorded = days.filter(d => points[d] !== undefined).length;
   const details = element('details', 'chartdetails');
-  details.append(element('summary', '', recorded + ' of ' + days.length + ' days recorded · Daily values'));
+  details.append(element('summary', '', recorded + ' of ' + days.length + (key === 'workouts' ? ' days with workouts' : ' days recorded') + ' · Daily values'));
   const wrap = element('div', 'tablewrap'), table = element('table');
   table.append(element('caption', '', meta.label + ' · ' + meta.unit));
   const thead = element('thead'), row = element('tr');
@@ -437,7 +525,8 @@ function dataTable(key, days) {
 
 function chartWidth(key) {
   const narrow = window.matchMedia('(max-width: 720px)').matches;
-  let fraction = narrow && activeTemplate !== 'recap' ? 1 : .5;
+  const recapSingleColumn = window.matchMedia('(max-width: 540px)').matches;
+  let fraction = narrow && (activeTemplate !== 'recap' || recapSingleColumn) ? 1 : .5;
   if (activeTemplate === 'observatory' && !narrow) {
     fraction = key === 'steps' ? 2 / 3 : key === 'sleep' ? 1 / 3 : key === 'workouts' ? 1 : .5;
   }
@@ -531,14 +620,8 @@ function chartPanel(key, days) {
   if (activeTemplate === 'recap') card.prepend(stat(key, 'tile-stat'));
   const mode = key === 'steps' ? (activeTemplate === 'observatory' ? 'area' : 'bar') : key === 'sleep' ? 'bar' : key === 'hrv' && activeTemplate === 'report' ? 'dot' : 'line';
   card.append(activeTemplate === 'report' && key === 'sleep' ? sleepDistribution(days) : timeChart(key, days, mode, activeTemplate === 'recap'));
-  if (activeTemplate === 'report') {
-    const s = data.summary[key], summary = element('div', 'panel-stats');
-    const a = element('div'), b = element('div'), c = element('div');
-    a.append(element('strong', '', num(s.value, meta.decimals)), element('span', '', 'Month avg · ' + meta.unit));
-    b.append(element('strong', '', s.change === null ? '—' : (s.change > 0 ? '+' : '') + num(s.change, 1) + '%'), element('span', '', 'vs prior period'));
-    c.append(element('strong', '', String(s.days)), element('span', '', 'Recorded days'));
-    summary.append(a, b, c); card.append(summary);
-  }
+  card.append(chartCoverage(key, days));
+  if (activeTemplate !== 'recap') card.append(monthlyStats(key));
   card.append(dataTable(key, days));
   return card;
 }
@@ -571,12 +654,16 @@ function coveragePanel() {
 function heatmap(days) {
   const panel = element('article', 'heatmap-panel');
   panel.append(element('h3', '', 'DAILY SIGNAL MAP'), element('p', '', 'Each row uses its own recorded range. Outlines indicate missing data.'));
-  const svg = svgElement('svg', {viewBox: '0 0 850 176', role: 'img', 'aria-label': 'Daily metric heatmap. Each row is independently scaled. Exact values in each chart’s table.'});
+  const coverageLabels = chartKeys.map(key => data.metrics[key].label + ': ' +
+    coverageLine(key, dashboardCoverage.period(data.series[key], days[0], days.at(-1)))).join('. ');
+  const svg = svgElement('svg', {viewBox: '0 0 1000 176', role: 'img', 'aria-label': 'Daily metric heatmap. Each row is independently scaled. ' + coverageLabels + '. Exact values in each chart’s table.'});
   const width = 708 / days.length;
   chartKeys.forEach((key, row) => {
     const values = days.map(d => data.series[key][d]), known = values.filter(v => v !== undefined);
     const low = Math.min(...known), high = Math.max(...known);
     svg.append(svgElement('text', {x: 0, y: 28 + row * 33, class: 'axis heat-label'}, {steps: 'Steps', sleep: 'Sleep', resting_hr: 'Resting HR', hrv: 'HRV'}[key]));
+    svg.append(svgElement('text', {x: 845, y: 19 + row * 33, class: 'axis heat-coverage'}, known.length + '/' + days.length + ' recorded'),
+      svgElement('text', {x: 845, y: 33 + row * 33, class: 'axis heat-coverage'}, (days.length - known.length) + ' missing'));
     values.forEach((v, i) => {
       const missing = v === undefined;
       const rect = svgElement('rect', {x: 118 + i * width, y: 9 + row * 33, width: Math.max(1, width - 2), height: 24, rx: 1,
@@ -605,7 +692,9 @@ function notes() {
   details.append(element('summary', '', 'Sources, coverage & calculation notes'));
   details.append(element('p', '', 'Sources: ' + data.sources.join(', ')));
   const copy = [
-    'Missing days stay missing. Averages use recorded days only; workout minutes are a total. Comparisons cover the same elapsed days in the prior month, capped at its end. Coverage can differ.',
+    'Missing days stay missing. Averages use recorded days only; workout minutes are a total. Comparisons cover the same elapsed days in the prior month, capped at its end. Monthly summaries stay fixed when the chart range changes.',
+    'Daily-metric changes are displayed only when each comparison period has at least 7 recorded days and 80% recorded-day coverage. This is a display rule, not statistical confidence or evidence of a trend. Coverage counts days with at least one usable value, not raw samples or device wear time; a recorded day may be incomplete.',
+    'Workout comparisons use recorded minute totals. Days without recorded workouts do not prove missing data or rest; export completeness cannot be inferred from workout-day counts.',
     'Steps reconcile overlapping sources in the order Health, Apple Watch, iPhone, then other sources. Heart measurements at identical intervals are reconciled; other samples contribute to daily means. Use --source to restrict sources when generating the file; saved preferences are not read.',
     'Sleep is grouped by each record’s end date, with in-bed time excluded. Workouts use valid active duration with elapsed time as a fallback. Exact matching intervals and activity types count once. Dates use export offsets.',
     'HRV is mean daily SDNN, not a recovery score. Charts show observations, not diagnoses or evidence that a habit caused a change.',
@@ -626,7 +715,7 @@ function renderTrends() {
     grid.insertBefore(heatmap(days), panels[2]);
     const coverage = coveragePanel(); coverage.classList.add('observatory-coverage'); grid.insertBefore(coverage, panels[2]);
     const workout = element('article', 'chart-card chart-workouts');
-    workout.append(element('h3', '', 'WORKOUT VOLUME'), element('p', 'chart-subtitle', descriptions.workouts), timeChart('workouts', days, 'bar'), dataTable('workouts', days)); grid.append(workout);
+    workout.append(element('h3', '', 'WORKOUT VOLUME'), element('p', 'chart-subtitle', descriptions.workouts), timeChart('workouts', days, 'bar'), chartCoverage('workouts', days), monthlyStats('workouts'), dataTable('workouts', days)); grid.append(workout);
   }
 }
 

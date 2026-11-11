@@ -13,7 +13,7 @@
 
 ![Three healthai templates: Monthly Report, Monthly Recap, and Observatory — same fictional data](assets/dashboard-templates.png)
 
-**New in v1.12.0:** a local dashboard for steps, sleep, resting heart rate, HRV, and workouts. No account, AI setup, server, or chart CDN. [Install the release](https://github.com/krumjahn/applehealth/releases/tag/v1.12.0) or try the source demo below.
+**Updated in v1.12.1:** a local dashboard for steps, sleep, resting heart rate, HRV, and workouts. No account, AI setup, server, or chart CDN. [Install the release](https://github.com/krumjahn/applehealth/releases/tag/v1.12.1) or try the source demo below.
 
 **One export, three distinct perspectives.** Choose a layout, then switch templates inside the generated HTML without parsing your export again. Every layout uses the same measurements and calculation policy.
 
@@ -23,7 +23,7 @@
 | **Monthly Recap** | Warm portrait almanac, oversized numbers, small trend charts, and a monthly steps headline | `./run dashboard --demo --template recap --out recap.html --open` |
 | **Observatory** | Dense dark panels, precise axes, daily signal heatmap, and workout volume | `./run dashboard --demo --template observatory --out observatory.html --open` |
 
-[Try the live dashboard gallery](https://rumjahn.com/healthai/) with 90 days of fictional sample data, or [download the fictional template gallery](https://github.com/krumjahn/applehealth/releases/download/v1.12.0/healthai-dashboard-templates.zip) and open `dashboard-templates.html` locally. [Watch the 31-second launch video](https://github.com/krumjahn/applehealth/releases/download/v1.12.0/healthai-dashboard-promo-1080p.mp4). The original editorial **Field Notes** layout also remains available with `--template field-notes`. `report` is the default. The in-file picker changes the current view; use the CLI option to set the layout shown when the file opens.
+[Try the live dashboard gallery](https://rumjahn.com/healthai/) with 90 days of fictional sample data, or [download the fictional template gallery](https://github.com/krumjahn/applehealth/releases/download/v1.12.1/healthai-dashboard-templates.zip) and open `dashboard-templates.html` locally. [Watch the 31-second launch video](https://github.com/krumjahn/applehealth/releases/download/v1.12.0/healthai-dashboard-promo-1080p.mp4). The original editorial **Field Notes** layout also remains available with `--template field-notes`. `report` is the default. The in-file picker changes the current view; use the CLI option to set the layout shown when the file opens.
 
 These original layouts take visual cues from the community's [monthly health report](https://www.reddit.com/r/QuantifiedSelf/comments/1vobemm/june_july_health_tracked_v2_update/), [October recap](https://www.reddit.com/r/QuantifiedSelf/comments/1xq3h2j/my_october2026_quantifiedself/), and [self-hosted monitoring dashboard](https://www.reddit.com/r/QuantifiedSelf/comments/1xek5mw/my_selfhosted_setup_a_year_of_data_80_metrics_in/). Their screenshots, personal data, proprietary scores, and unsupported metrics are not bundled. Observatory's heatmap shows daily summaries, with each metric independently scaled; it does not imply hourly samples or cross-metric comparability.
 
@@ -35,7 +35,7 @@ cd applehealth
 ./run dashboard --demo --open
 ```
 
-The demo needs only Python 3.9+ and the source checkout. You can also download [the standalone demo HTML](https://github.com/krumjahn/applehealth/releases/download/v1.12.0/dashboard-demo.html) and open it locally.
+The demo needs only Python 3.9+ and the source checkout. You can also download [the standalone demo HTML](https://github.com/krumjahn/applehealth/releases/download/v1.12.1/dashboard-demo.html) and open it locally.
 
 For your own data, install this checkout in a virtual environment once, then generate a report:
 
@@ -45,7 +45,7 @@ python3 -m venv .venv
 ./run dashboard ~/Downloads/export.zip --out ./my-health.html --open
 ```
 
-With v1.12.0 or this checkout installed, `healthai dashboard` is equivalent to `./run dashboard`. XML files and export directories work too. To export from your iPhone, open **Health → your profile → Export All Health Data**, then transfer the ZIP to your computer.
+With v1.12.1 or this checkout installed, `healthai dashboard` is equivalent to `./run dashboard`. XML files and export directories work too. To export from your iPhone, open **Health → your profile → Export All Health Data**, then transfer the ZIP to your computer.
 
 ```bash
 # Choose a month instead of the latest month found in your export
@@ -61,6 +61,8 @@ healthai dashboard export.zip --source "Keith's Apple Watch" --out watch.html
 - **Transparent calculations:** the existing analyzer reconciles overlapping step/sleep sources. HRV is normalized to milliseconds; resting heart rate to BPM. Workouts use valid active duration, falling back to elapsed time with a warning. Exact matching workout intervals and activity types are counted once.
 
 The report is a **snapshot**, not a live sync service. Regenerate it from a newer export to refresh it. Its 90-day window ends at the last supported record in the selected month. XML/ZIP is scanned twice, retaining only supported records in that window for analysis; memory and processing time still depend on the number of retained samples. This differs from the streaming raw converter's memory characteristics below. Real-data dashboards require pandas, already a project dependency; no AI provider is invoked. Dashboard source selection is explicit via `--source` and does not read saved interactive preferences.
+
+**Coverage and comparisons:** every chart shows recorded days, missing days, and coverage for its selected range. Monthly averages show the current and prior periods’ coverage alongside percentage and absolute changes. Changes for daily metrics are withheld unless both periods have at least 7 recorded days and 80% day coverage. This is a display rule, not statistical confidence: days with data can still be incomplete. Workouts show recorded event totals, since a day without a workout does not establish missing data. Observatory’s signal-map rows also show recorded and missing-day counts.
 
 **Privacy:** dashboard generation makes no network requests. The HTML contains your health summaries and source names; anyone you give it to can read those values. Only fictional data is included in the checked-in demo and screenshot. Installation may download dependencies; optional cloud AI is a separate command path.
 
@@ -127,10 +129,10 @@ The large run temporarily needs several GB of free disk space. Generated inputs 
 
 ## Installation
 
-Install v1.12.0 directly from the GitHub release:
+Install v1.12.1 directly from the GitHub release:
 
 ```bash
-pipx install https://github.com/krumjahn/applehealth/releases/download/v1.12.0/healthai-1.12.0-py3-none-any.whl
+pipx install https://github.com/krumjahn/applehealth/releases/download/v1.12.1/healthai-1.12.1-py3-none-any.whl
 ```
 
 Already using pipx? Run the same release URL with `pipx install --force` to upgrade.

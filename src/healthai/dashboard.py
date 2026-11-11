@@ -245,7 +245,9 @@ def write_dashboard(data, output, template="report"):
     # script tag; all user-controlled strings in the UI use textContent.
     payload = json.dumps({**data, "template": template}, ensure_ascii=True, allow_nan=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     html = document.replace("__DASHBOARD_CSS__", (assets / "dashboard.css").read_text(encoding="utf-8"))
-    html = html.replace("__DASHBOARD_JS__", (assets / "dashboard.js").read_text(encoding="utf-8"))
+    scripts = "\n".join((assets / name).read_text(encoding="utf-8")
+                        for name in ("dashboard_coverage.js", "dashboard.js"))
+    html = html.replace("__DASHBOARD_JS__", scripts)
     html = html.replace("__HEALTH_DATA__", payload)
     destination.parent.mkdir(parents=True, exist_ok=True)
     created = False

@@ -63,9 +63,18 @@ table { border-collapse: collapse; width: 100%; text-align: left; font-size: 11p
 caption { text-align: left; padding: 4px; }
 th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
 th { font-weight: 500; }
-.panel-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding-top: 12px; margin-top: 9px; border-top: 1px solid var(--grid); }
-.panel-stats strong { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
-.panel-stats span { display: block; color: var(--muted); font-size: 8px; margin-top: 5px; }
+.chart-coverage { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3px 12px; margin-top: 9px; font-size: 10px; line-height: 1.6; }
+.chart-coverage strong { font-weight: 550; }
+.chart-coverage span { color: var(--muted); }
+.chart-monthly-stats { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.chart-monthly-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; }
+.chart-monthly-value strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.chart-monthly-value span { font-size: 10px; color: var(--muted); }
+.monthly-evidence { font-size: 10px; line-height: 1.6; margin-top: 6px; overflow-wrap: anywhere; }
+.coverage-current { font-weight: 550; }
+.coverage-prior, .coverage-note { color: var(--muted); }
+.coverage-caution { border-left: 2px solid var(--accent, var(--muted)); padding-left: 7px; margin-top: 5px; }
+.coverage-note { margin-top: 4px; font-size: 9px; }
 .supplement { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 .calendar-panel, .coverage-panel, .training, .heatmap-panel { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 18px; }
 .calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -183,6 +192,7 @@ body[data-template="observatory"] .chartdetails { font-size: 8px; }
 .heatmap-panel svg { display: block; width: 100%; height: 155px; margin-top: 10px; }
 .heatmap-scroll { overflow-x: auto; }
 .heat-label { font-size: 12px; }
+.heat-coverage { font-size: 11px; }
 .observatory-coverage { grid-column: span 4; border-radius: 3px; padding: 17px 15px; }
 .observatory-coverage .coverage-row { grid-template-columns: 90px 1fr 30px; gap: 6px; margin: 18px 0; font-size: 8px; }
 body[data-template="observatory"] .chart-workouts { grid-column: 1/-1; }
@@ -200,6 +210,7 @@ body[data-template="field-notes"] .report-header { margin-bottom: 30px; }
 body[data-template="field-notes"] .edition span { font: 25px Georgia, serif; }
 body[data-template="field-notes"] .metric:first-child { background: #173f36; color: #e0efb5; }
 body[data-template="field-notes"] .metric:first-child .metric-label, body[data-template="field-notes"] .metric:first-child .unit, body[data-template="field-notes"] .metric:first-child .coverage { color: #b7c8ba; }
+body[data-template="field-notes"] .metric:first-child .coverage-prior, body[data-template="field-notes"] .metric:first-child .coverage-note { color: #b7c8ba; }
 body[data-template="field-notes"] .chart { height: 180px; }
 body[data-template="field-notes"] .file-footer { max-width: 1280px; }
 
@@ -253,9 +264,13 @@ body[data-template="field-notes"] .file-footer { max-width: 1280px; }
   body[data-template="observatory"] .charts { grid-template-columns: 1fr; }
   body[data-template="observatory"] .chart-card, .heatmap-panel, .observatory-coverage { grid-column: 1; }
   body[data-template="observatory"] .training .session { display: grid; width: 100%; padding-right: 0; }
-  .heatmap-panel svg { height: 150px; min-width: 640px; }
+  .heatmap-panel svg { height: 150px; min-width: 780px; }
   body[data-template="field-notes"] h1 { font-size: 38px; }
   body[data-template="field-notes"] .edition span { font-size: 17px; }
+}
+@media (max-width: 540px) {
+  body[data-template="recap"] .charts { grid-template-columns: 1fr; }
+  body[data-template="recap"] .delta { font-size: 10px; }
 }
 @media (max-width: 400px) {
   .brand { font-size: 18px; }

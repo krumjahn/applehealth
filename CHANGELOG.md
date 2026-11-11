@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.12.1 - 2026-11-11
+
+- Put recorded-day counts, percentages, and missing days beside every chart and monthly summary, including coverage for the prior comparison period.
+- Show percentage and absolute monthly changes only when daily metrics have at least 7 recorded days and 80% coverage in both periods; explain this as a display rule, not statistical confidence.
+- Add recorded and missing-day counts to every Observatory signal-map row, with accessible descriptions and counts that follow the selected chart range.
+- Keep workout event counts separate from missing daily measurements and improve Monthly Recap readability on narrow screens.
+- Add eight coverage regression checks for sparse periods, zero values, partial months, leap years, and workout totals.
+
 ## v1.12.0 - 2026-11-10
 
 - Add `healthai dashboard` / `./run dashboard` for private, standalone HTML reports from Apple Health XML, ZIP, or export directories.
